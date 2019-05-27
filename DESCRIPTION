@@ -1,0 +1,27 @@
+Package: keitt.ssi.2019
+Title: Learning materials for Geospatial Data Analysis in R, part of the UT Summer Statistics Institute
+Version: 0.0.0.9000
+Authors@R: person("Timothy", "Keitt", email = "tkeitt@utexas.edu", role = c("aut", "cre"))
+Description: Contains documents for learning geospatial data analysis.
+Depends: R (>= 3.6.0)
+License: CCBY-4.0
+Encoding: UTF-8
+LazyData: true
+Imports: 
+    raster,
+    sf,
+    ggplot2,
+    leaflet,
+    tibble,
+    magrittr,
+    dplyr,
+    readr,
+    tidyr,
+    purrr,
+    mapview,
+    tmap
+Suggests: 
+    knitr,
+    rmarkdown
+VignetteBuilder: knitr
+RoxygenNote: 6.1.1
