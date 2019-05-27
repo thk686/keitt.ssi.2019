@@ -7,9 +7,11 @@ Depends: R (>= 3.6.0)
 License: CCBY-4.0
 Encoding: UTF-8
 LazyData: true
-Imports: 
+Imports:
+    devtools,
     raster,
     sf,
+    sp,
     ggplot2,
     leaflet,
     tibble,
@@ -19,7 +21,23 @@ Imports:
     tidyr,
     purrr,
     mapview,
-    tmap
+    tmap,
+    tigris,
+    ggrepel,
+    lme4,
+    nlme,
+    RPostgreSQL,
+    iterators,
+    foreach,
+    doMC,
+    knitr,
+    printr,
+    geosphere,
+    spatstat,
+    spatstat.data,
+    maptools,
+    fields,
+    spatial
 Suggests: 
     knitr,
     rmarkdown
