@@ -8,6 +8,14 @@
 \description{
 Contains documents for learning geospatial data analysis.
 }
+\seealso{
+Useful links:
+\itemize{
+  \item \url{https://github.com/thk686/keitt.ssi.2019}
+  \item Report bugs at \url{https://github.com/thk686/keitt.ssi.2019/issues}
+}
+
+}
 \author{
 \strong{Maintainer}: Timothy Keitt \email{tkeitt@utexas.edu}
 
