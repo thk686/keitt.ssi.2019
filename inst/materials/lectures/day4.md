@@ -1,0 +1,21 @@
+
+
+
+Geospatial Data Analysis in R
+========================================================
+author: Timothy H. Keitt
+date: May 12, 2014
+width: 1440
+height: 900
+
+Working with raster data
+========================================================
+type: section
+
+Working with raster data
+========================================================
+type: sub-section
+- Raster data
+- `sp` raster classes
+- the `raster` package
+- correlogram example

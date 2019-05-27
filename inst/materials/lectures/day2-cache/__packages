@@ -1,0 +1,16 @@
+base
+knitr
+printr
+sp
+rgdal
+rgeos
+geosphere
+spatstat.data
+nlme
+rpart
+spatstat
+maptools
+dotCall64
+spam
+maps
+fields

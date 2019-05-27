@@ -1,0 +1,1005 @@
+```{r setup, include=FALSE}
+opts_chunk$set(cache=TRUE, messages=FALSE, warnings=FALSE, errors=FALSE)
+pacman::p_load(printr)
+```
+
+Geospatial Data Analysis in R
+========================================================
+author: Timothy H. Keitt
+date: May 12, 2014
+width: 1440
+height: 900
+
+Working with vector data
+========================================================
+type: section
+
+Working with vector data
+========================================================
+type: sub-section
+- Simple features
+- The `rgdal` package
+- Vector data IO
+- `sp` classes
+- Creating vector data
+- Plotting vector data
+- Reprojecting data
+- The `rgeos` library
+- Geometry operators
+- Basic point processes
+- Interpolation and Kriging
+
+Spatial layers
+========================================================
+GIS building blocks
+
+<img src="images/Capture91.png" height = 700 />
+
+Working with vector data
+========================================================
+type: sub-section
+- **Simple features**
+- The `rgdal` package
+- Vector data IO
+- `sp` classes
+- Creating vector data
+- Plotting vector data
+- Reprojecting data
+- The `rgeos` library
+- Geometry operators
+- Basic point processes
+- Interpolation and Kriging
+
+Working with vector data
+========================================================
+OGC Simple Feature Hierarchy
+
+<img src="images/GeometryTypes_2.png" height = 700 />
+
+Working with vector data
+========================================================
+OGC Simple Feature Hierarchy
+
+<img src="images/gis-datatypes.png" height = 700 />
+
+Working with vector data
+========================================================
+Complex versus simple features
+
+<img src="images/st_issimple01.png" width = 500 />
+<img src="images/st_issimple02.png" width = 500 />
+
+Most spatial operators in R require simple features
+
+Working with vector data
+========================================================
+Complex versus simple features
+
+<img src="images/st_issimple03.png" width = 500 />
+<img src="images/st_issimple04.png" width = 500 />
+
+Most spatial operators in R require simple features
+
+Working with vector data
+========================================================
+OGC Simple Features Well-Known-Text
+
+<img src="images/ogc_wkt_1.png" height = 700 />
+
+Working with vector data
+========================================================
+OGC Simple Features Well-Known-Text
+
+<img src="images/ogc_wkt_2.png" height = 700 />
+
+Working with vector data
+========================================================
+type: sub-section
+- Simple features
+- **The `rgdal` package**
+- Vector data IO
+- `sp` classes
+- Creating vector data
+- Plotting vector data
+- Reprojecting data
+- The `rgeos` library
+- Geometry operators
+- Basic point processes
+- Interpolation and Kriging
+
+Working with vector data
+========================================================
+RGDAL package
+
+- OGR component of GDAL handles vector data (http://www.gdal.org/)
+- Data source -> data layer -> simple features
+- Written in C++
+- Like GDAL, large collection of runtime drivers
+- Encapsulated in `rgdal` and experimental `rgdal2` packages
+- With `rgdal` package, main use is to read data into `sp` classes
+
+Working with vector data
+========================================================
+RGDAL package
+
+```{r}
+pacman::p_load(rgdal)
+as.character(ogrDrivers()[[1]])
+```
+
+Uniform access to many data sources
+
+Uniform access to many data sources
+
+Working with vector data
+========================================================
+type: sub-section
+- Simple features
+- The `rgdal` package
+- **Vector data IO**
+- `sp` classes
+- Creating vector data
+- Plotting vector data
+- Reprojecting data
+- The `rgeos` library
+- Geometry operators
+- Basic point processes
+- Interpolation and Kriging
+
+Working with vector data
+========================================================
+Vector data IO
+
+- main functions
+  - readOGR
+  - writeOGR
+
+```{r}
+vecdat = readOGR("example-data/continents", "continent")
+```
+First argument (`dsn`) is the data source. The second argument is the layer within the data source.
+
+Working with vector data
+========================================================
+Vector data IO
+
+An ESRI shapefile is often several files stored together in a directory. The directory is the data source and the `.shp` file is the layer. Other files hold spatial reference system and tabular field data.
+```{r}
+dir("example-data")              # see the data source
+dir("example-data/continents")   # see the data layers
+```
+Other formats are single file, in which case the data source is the file name and the layer is named within the file, typically the same as the file name without the extension.
+
+Working with vector data
+========================================================
+Vector data IO
+
+- Layers are always named and numbered within the data source
+- Data sources can be directories containing files for the different layers or can be single files
+- Data source can also be a relational database system or web service capable of providing simple features
+```{r eval = FALSE}
+vecdat = readOGR("PG:dbname=mydatabase", "thetable") # not run
+```
+This example would load the simple features and associated attribute columns from a PostGIS (http://www.postgis.org) table stored in a PostgreSQL database (http://www.postgresql.org).
+
+Working with vector data
+========================================================
+Vector data IO
+
+```{r fig.width = 20}
+plot(vecdat, col = "lightblue")
+```
+
+Working with vector data
+========================================================
+Vector data IO
+
+`writeOGR` does the opposite
+```{r eval = FALSE}
+dest = tempdir()
+writeOGR(vecdat, dest, "newlayername", "ESRI Shapefile")
+dir(dest)
+unlink(dest)  # remove the output
+```
+
+Working with vector data
+========================================================
+type: sub-section
+- Simple features
+- The `rgdal` package
+- Vector data IO
+- **`sp` classes**
+- Creating vector data
+- Plotting vector data
+- Reprojecting data
+- The `rgeos` library
+- Geometry operators
+- Basic point processes
+- Interpolation and Kriging
+
+Working with vector data
+========================================================
+`sp` classes
+```{r}
+class(vecdat)       # sp class: help(package=sp)
+show(vecdat@data)   # data slot contains attribute table
+```
+
+Working with vector data
+========================================================
+`sp` classes
+
+Classes
+
+Spatially-referenced geometry  | Geometries with attribute table
+------------- | -------------
+SpatialPoints  | SpatialPointsDataFrame
+SpatialLines  | SpatialLinesDataFrame
+SpatialPolygons | SpatialPolygonsDataFrame
+
+The *xDataFrame* classes have a data frame attached. The rows of the data frame match the position in the list of geometries.
+
+Working with vector data
+========================================================
+type: sub-section
+- Simple features
+- The `rgdal` package
+- Vector data IO
+- `sp` classes
+- **Creating vector data**
+- Plotting vector data
+- Reprojecting data
+- The `rgeos` library
+- Geometry operators
+- Basic point processes
+- Interpolation and Kriging
+
+Working with vector data
+========================================================
+Creating vector data
+
+```{r}
+loc = rbind(c(30.25, 97.75), c(42.36, 71.06),
+            c(41.88, 87.63), c(37.78, 122.42))
+loc = cbind(-loc[,2], loc[,1])
+show(loc)
+```
+
+Working with vector data
+========================================================
+Creating vector data
+
+```{r}
+spts = SpatialPoints(loc, CRS("+proj=longlat +ellps=WGS84"))
+nam = subset(vecdat, CONTINENT=="North America")
+plot(spts, type = "n")                  # set axis limits
+plot(nam, lwd = 2, xpd = NA, add = T)   # plot continent boundaries
+plot(spts, cex = 4, pch = 21, bg = "orange", add = T)
+```
+
+Working with vector data
+========================================================
+Creating vector data
+
+```{r}
+lut = data.frame(cities = c("Austin", "Boston",
+                            "Chicago", "Los Angeles"))
+spts.df = SpatialPointsDataFrame(loc, lut)
+show(class(spts.df))
+show(spts.df)
+```
+
+Working with vector data
+========================================================
+Creating vector data
+
+```{r}
+loc = rbind(loc, loc[1,])    # 1st and last point same
+lring = Polygon(loc, hole = FALSE)
+poly = Polygons(list(lring), "1")  # Single ring polygon
+spoly = SpatialPolygons(list(poly), proj4 = CRS("+proj=longlat +ellps=WGS84"))
+show(spoly)
+```
+
+Working with vector data
+========================================================
+Creating vector data
+
+```{r}
+plot(spts, type = "n")         # set axis limits
+plot(nam, lwd = 2, col = "navajowhite", xpd = NA, add = T)
+plot(spoly, col = "lightblue", add = T)
+plot(spts, cex = 4, pch = 21, bg = "darkgreen", add = T)
+```
+
+Working with vector data
+========================================================
+type: sub-section
+- Simple features
+- The `rgdal` package
+- Vector data IO
+- `sp` classes
+- Creating vector data
+- **Plotting vector data**
+- Reprojecting data
+- The `rgeos` library
+- Geometry operators
+- Basic point processes
+- Interpolation and Kriging
+
+Working with vector data
+========================================================
+Plotting vector data
+
+- Several different systems
+- Base graphics
+  - `plot`, `points`, `lines`, `polygons`
+- Grid graphics
+  - Low-level
+  - Base for lattice and ggplot2
+- Lattice
+  - `xyplot`, `spplot`
+- Ggplot2
+  - `qplot`, `ggplot`
+  - Lots of folks moving to this
+
+Working with vector data
+========================================================
+Plotting vector data
+
+The `plot` command is specialized for `sp` classes and will generally do the right thing. A few switches:
+
+- `type` -- one of `p, l, o, n` (points, lines, points-lines, suppress output)
+- `add` -- if `TRUE` then overlay on current plot
+- `cex` -- symbol magnification factor
+- `lwd` -- line width
+- `col` -- the color to use (many ways to specify; see `rgb`)
+- `bg` -- the background or fill color
+- `xpd` -- if set to `NA` will supress clipping at plot borders
+- `pch` -- symbol for points (21 = filled circle)
+
+Working with vector data
+========================================================
+type: sub-section
+- Simple features
+- The `rgdal` package
+- Vector data IO
+- `sp` classes
+- Creating vector data
+- Plotting vector data
+- **Reprojecting data**
+- The `rgeos` library
+- Geometry operators
+- Basic point processes
+- Interpolation and Kriging
+
+Working with vector data
+========================================================
+Reprojecting data
+
+<img src="images/projections.jpg" height = 700 />
+
+Working with vector data
+========================================================
+Reprojecting data
+
+```{r}
+p4s = "+proj=laea +lat_0=45 +lon_0=-100 +x_0=0 +y_0=0 +a=6370997 +b=6370997 +units=m +no_defs" # US National Atlas
+nam.laea = spTransform(nam, CRS(p4s))
+spoly.laea = spTransform(spoly, CRS(p4s))
+spts.laea = spTransform(spts, CRS(p4s))
+show(spts.laea)
+```
+
+Working with vector data
+========================================================
+Reprojecting data
+
+```{r}
+plot(spts, type = "n")         # set axis limits
+plot(nam, lwd = 2, col = "navajowhite", xpd = NA, add = T)
+plot(spoly, col = "lightblue", add = T)
+plot(spts, cex = 4, pch = 21, bg = "darkgreen", add = T)
+```
+
+Working with vector data
+========================================================
+Reprojecting data
+
+```{r}
+plot(spts.laea, type = "n")         # set axis limits
+plot(nam.laea, lwd = 2, col = "navajowhite", xpd = NA, add = T)
+plot(spoly.laea, col = "lightblue", add = T)
+plot(spts.laea, cex = 4, pch = 21, bg = "darkgreen", add = T)
+```
+
+Working with vector data
+========================================================
+Reprojecting data
+
+- Based on PROJ4 software, see http://trac.osgeo.org/proj/
+- Look up `proj4string` at: http://spatialreference.org/
+- Large libraries of "canned" definitions
+  - European Petroleum Survey Group (EPSG)
+  - ESRI
+  - International Astronomical Union (IAU)
+- These define parameters, units, earth model, etc.
+
+Working with vector data
+========================================================
+type: sub-section
+- Simple features
+- The `rgdal` package
+- Vector data IO
+- `sp` classes
+- Creating vector data
+- Plotting vector data
+- Reprojecting data
+- **The `rgeos` library**
+- Geometry operators
+- Basic point processes
+- Interpolation and Kriging
+
+Working with vector data
+========================================================
+The `rgeos` library
+
+- Wrapper for the Geometry Engine - Open Source
+- C++ port of Java Topology Suite
+- Used by PostGIS for geometry operations
+- Also exposed by GDAL, but not wrapped in `rgdal` (is in `rgdal2`)
+
+Working with vector data
+========================================================
+The `rgeos` library
+
+Uses simple features
+
+  - POINT
+  - LINESTRING
+  - POLYGON
+  - MULTIPOINT
+  - MULTILINESTRING
+  - MULTIPOLYGON
+  - GEOMETRYCOLLECTION
+
+stored in `sp` classes
+
+Working with vector data
+========================================================
+The `rgeos` library
+
+Read in `sp` objecst using `rgdal` or other software or construct from WKT
+
+```{r}
+pacman::p_load(rgeos)
+p1 = readWKT("POINT(-97.75 30.25)", p4s = "+proj=longlat +ellps=WGS84")
+show(p1)
+writeWKT(p1)
+```
+
+Working with vector data
+========================================================
+The `rgeos` library
+
+```{r}
+p2 = readWKT("POINT(-71.06 42.36)", p4s = "+proj=longlat +ellps=WGS84")
+gDistance(p1, p2)    # Euclidian distance!
+pacman::p_load(geosphere)
+distm(p1, p2)  # in meters
+gc = SpatialPoints(greatCircle(p1, p2), proj = CRS("+proj=longlat +ellps=WGS84"))
+```
+
+Working with vector data
+========================================================
+The `rgeos` library
+
+```{r}
+plot(spts, type = "n")         # set axis limits
+plot(nam, lwd = 2, col = "navajowhite", xpd = NA, add = T)
+plot(gc, lwd = 3, col = "lightblue", add = T)
+plot(spts, cex = 4, pch = 21, bg = "darkgreen", add = T)
+```
+
+Working with vector data
+========================================================
+type: sub-section
+- Simple features
+- The `rgdal` package
+- Vector data IO
+- `sp` classes
+- Creating vector data
+- Plotting vector data
+- Reprojecting data
+- The `rgeos` library
+- **Geometry operators**
+- Basic point processes
+- Interpolation and Kriging
+
+Working with vector data
+========================================================
+Geometry operators
+
+Spatial sets
+
+<img src="images/de9im1.jpg" width = 600 />
+<img src="images/de9im2.jpg" width = 600 />
+
+Working with vector data
+========================================================
+<img src="images/de9im3.jpg" height = 800 />
+
+Working with vector data
+========================================================
+Geometry operators
+
+Spatial sets
+
+<img src="images/de9im4.jpg" width = 600 />
+<img src="images/de9im5.jpg" width = 600 />
+
+Working with vector data
+========================================================
+Geometry operators
+
+```{r}
+sp1 = readWKT("POLYGON ((10 10, 15 0, 25 0, 30 10, 25 20, 15 20, 10 10))")
+sp2 = readWKT("POLYGON ((20 10, 30 0, 40 10, 30 20, 20 10))")
+plot(gUnion(sp1, sp2), type = "n")
+plot(sp1, col = "lightblue", add = T)
+plot(sp2, col = "lightgreen", add = T)
+plot(gIntersection(sp1, sp2), col = "lightyellow", add = T)
+```
+
+Working with vector data
+========================================================
+Geometry operators
+
+```{r}
+rel = gRelate(sp1, sp2); show(rel)
+mat = matrix(unlist(strsplit(rel, "")), 3)
+typ = c("interior", "boundary", "exterior")
+dimnames(mat) = list(typ, typ)
+mode(mat) = "numeric"; show(mat)
+```
+
+Working with vector data
+========================================================
+Geometry operators
+
+<p>Consider the following definition of Area/Area overlap:</p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="17%" />
+<col width="28%" />
+<col width="28%" />
+<col width="28%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td>OVERLAP</td>
+<td>Interior</td>
+<td>Boundary</td>
+<td>Exterior</td>
+</tr>
+<tr class="row-even"><td>Interior</td>
+<td>T</td>
+<td>*</td>
+<td>T</td>
+</tr>
+<tr class="row-odd"><td>Boundary</td>
+<td>*</td>
+<td>*</td>
+<td>*</td>
+</tr>
+<tr class="row-even"><td>Exterior</td>
+<td>T</td>
+<td>*</td>
+<td>*</td>
+</tr>
+</tbody>
+</table>
+<p>
+
+As a string: T\*T\*\*\*T\*\*
+
+http://docs.geotools.org/stable/userguide/library/jts/dim9.html
+
+Working with vector data
+========================================================
+Geometry operators
+
+<table border="1" class="docutils">
+<colgroup>
+<col width="22%" />
+<col width="25%" />
+<col width="16%" />
+<col width="37%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head">Relationship</th>
+<th class="head">Area/Area Pattern</th>
+<th class="head">&#8220;212101212&#8221;</th>
+<th class="head">Description</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td>Disjoint</td>
+<td>FF*FF****</td>
+<td>false</td>
+<td>x is not disjoint from y</td>
+</tr>
+<tr class="row-odd"><td>Touches</td>
+<td>FT*******</td>
+<td>false</td>
+<td>x does not just touch y</td>
+</tr>
+<tr class="row-even"><td>Touches</td>
+<td>F***T****</td>
+<td>false</td>
+<td>x does not just touch y</td>
+</tr>
+<tr class="row-odd"><td>Crosses</td>
+<td>T*T***T**</td>
+<td>true</td>
+<td>x crosses y</td>
+</tr>
+<tr class="row-even"><td>Within</td>
+<td>TF*F*****</td>
+<td>false</td>
+<td>x is not within y</td>
+</tr>
+<tr class="row-odd"><td>Overlaps</td>
+<td>T*T***T**</td>
+<td>true</td>
+<td>x overlaps y</td>
+</tr>
+</tbody>
+</table>
+
+```{r echo = FALSE}
+sp1 = readWKT("POLYGON ((10 10, 15 0, 25 0, 30 10, 25 20, 15 20, 10 10))")
+sp2 = readWKT("POLYGON ((20 10, 30 0, 40 10, 30 20, 20 10))")
+plot(gUnion(sp1, sp2), type = "n")
+plot(sp1, col = "lightblue", add = T)
+plot(sp2, col = "lightgreen", add = T)
+plot(gIntersection(sp1, sp2), col = "lightyellow", add = T)
+```
+
+Working with vector data
+========================================================
+Geometry operators
+
+```{r}
+pts = SpatialPoints(matrix(rnorm(10), 5))
+plot(pts, cex = 4, pch = 21, bg = "lightblue")
+```
+
+Working with vector data
+========================================================
+Geometry operators
+
+```{r}
+plot(gBuffer(pts), lwd = 3)
+plot(pts, cex = 4, pch = 21, bg = "lightblue", add = T)
+```
+
+Working with vector data
+========================================================
+Geometry operators
+
+```{r}
+plot(gBuffer(gConvexHull(pts)), lwd = 3)
+plot(gConvexHull(pts), lwd = 3, add = T)
+plot(pts, cex = 4, pch = 21, bg = "lightblue", add = T)
+```
+
+Working with vector data
+========================================================
+type: sub-section
+- Simple features
+- The `rgdal` package
+- Vector data IO
+- `sp` classes
+- Creating vector data
+- Plotting vector data
+- Reprojecting data
+- The `rgeos` library
+- Geometry operators
+- **Basic point processes**
+- Interpolation and Kriging
+
+Working with vector data
+========================================================
+Basic point processes
+
+- Point process models focus on spatial pattern of locations
+- Point patterns can be
+  - unmarked -- just the locations
+  - marked -- values associated with each point
+- Main questions
+  - What is the intensity (points / area) of the pattern?
+  - Are the points related to each other in some way?
+  - Is the pattern the same everywhere or different in different places?
+
+Working with vector data
+========================================================
+Basic point processes
+
+- Libraries
+  - `spatial`
+  - `spatstat`
+  - `MarkedPointProcess`
+  - `splancs`
+  - many others
+
+Working with vector data
+========================================================
+Basic point processes
+
+```{r}
+pacman::p_load(spatstat)
+pacman::p_load(maptools)
+pacman::p_load(rgdal)
+trees = readOGR("example-data/rainforest", "beilschmiedia")
+show(trees[1:3,])
+```
+
+Working with vector data
+========================================================
+Basic point processes
+
+```{r}
+xy = coordinates(trees)
+win = readOGR("example-data/rainforest", "window")
+w = as(win, "owin")
+show(w)
+```
+
+Working with vector data
+========================================================
+Basic point processes
+
+```{r, fig.width = 12}
+bei = ppp(xy[,1], xy[,2], window = w)
+plot(bei, lwd = 2)
+```
+
+Working with vector data
+========================================================
+Basic point processes
+
+
+```{r, fig.width = 12}
+summary(bei)
+```
+
+Working with vector data
+========================================================
+Basic point processes
+
+```{r, fig.width = 12}
+intensity(bei)
+qc = quadratcount(bei); show(qc)
+show(var(as.vector(qc)) / mean(as.vector(qc)))
+```
+
+Working with vector data
+========================================================
+Basic point processes
+
+```{r, fig.width = 12}
+plot(bei, pch = "+")
+plot(qc, col = 'red', lty = 2, cex = 2, add = TRUE)
+```
+
+Working with vector data
+========================================================
+Basic point processes
+
+```{r}
+make.hist = function()
+{
+  h = hist(qc, plot = FALSE)
+  dens = density(qc)
+  x = min(h$breaks):max(h$breaks)
+  pois = list(x = x, y = dpois(x, mean(qc)))
+  yrange = range(c(h$density, dens$y, pois$y))
+  plot(range(x), range(yrange), type = "n", ylab = "density", xlab = "count")
+  lg = "lightgrey"
+  hist(qc, border = lg, col = lg, freq = F, add = T)
+  lines(dens, lwd = 3, col = "steelblue")
+  lines(pois, lwd = 3, col = "darkgreen")
+  legend("topright", c("density", "Poisson"), col = c("steelblue", "darkgreen"), lwd = 3, bty = "n")
+}
+```
+
+Working with vector data
+========================================================
+Basic point processes
+
+```{r, echo = FALSE, fig.width = 12}
+make.hist()
+```
+
+Working with vector data
+========================================================
+Basic point processes
+
+Ripley's K $$\hat{K}(r) = \frac{a}{n(n-1)}\sum_i\sum_j I(d_{ij} < r) e_{ij}$$
+
+<img src="images/k-graph.jpg" width = 600 />
+
+Working with vector data
+========================================================
+Basic point processes
+
+```{r fig.width = 12}
+beiK = Kest(bei, correction = "isotropic")
+invisible(plot(beiK))
+```
+
+Working with vector data
+========================================================
+Basic point processes
+
+Repeated Monte Carlo simulations of Poisson point process
+
+```{r fig.width = 12}
+beiE = envelope(bei, nsim = 10)
+```
+
+Working with vector data
+========================================================
+Basic point processes
+
+```{r fig.width = 12}
+invisible(plot(beiE))
+```
+
+Working with vector data
+========================================================
+Basic point processes
+
+```{r fig.width = 12}
+mod1 = ppm(bei ~ x + y)  # fit poisson depending on x and y
+print(mod1)
+```
+
+Working with vector data
+========================================================
+Basic point processes
+
+```{r fig.width = 12}
+plot(predict(mod1))
+plot(bei, add = T)
+```
+
+Working with vector data
+========================================================
+Basic point processes
+
+```{r fig.width = 12}
+plot(density(bei, 100))  # kernel density estimate
+plot(bei, add = T)
+```
+
+Working with vector data
+========================================================
+type: sub-section
+- Simple features
+- The `rgdal` package
+- Vector data IO
+- `sp` classes
+- Creating vector data
+- Plotting vector data
+- Reprojecting data
+- The `rgeos` library
+- Geometry operators
+- Basic point processes
+- **Interpolation and Kriging**
+
+Working with vector data
+========================================================
+Interpolation and Kriging
+
+Thin-plate spline:
+
+$$ y_i = f(x_i) + \epsilon_i $$
+
+where $x_i$ are coordinates, $y_i$ are measurments and $f$ is a smooth function found by minimizing:
+
+$$||\mathbf{y}-\mathbf{f}||^2 + \lambda \int \mathbf{f}''(x)^2 dx$$
+
+where $\lambda$ is a smoothing parameter. The resulting $f$ smoothly interpolates the data. It is an esimate of the locally conditioned mean of $\mathbf{y}$.
+
+Working with vector data
+========================================================
+Interpolation and Kriging
+
+```{r}
+ozone = readOGR("example-data/ozone.gml", "ozone")
+summary(ozone)
+```
+
+Working with vector data
+========================================================
+Interpolation and Kriging
+
+```{r fig.width = 12}
+grna =  rgb(0.1, 0.5, 0.1, 0.25)      # transparent green
+plot(ozone, pch = 21, cex = ozone$median / 10, bg = grna)
+points(ozone, pch = 19, col = "blue"); box()
+```
+
+Working with vector data
+========================================================
+Interpolation and Kriging
+
+```{r fig.width = 12}
+pacman::p_load(fields)
+oz.tps = Tps(coordinates(ozone), ozone$median)
+show(oz.tps)
+```
+
+Working with vector data
+========================================================
+Interpolation and Kriging
+
+```{r fig.width = 12}
+surface(oz.tps)
+```
+
+Working with vector data
+========================================================
+Interpolation and Kriging
+
+Regression Kriging model
+
+$$ Y_k = P(x_k) + Z(x_k) + \epsilon_k $$
+
+where $P(x)$ is a low-order polynomial trend surface and $Z(x)$ is a stationary Gaussian processes with spatial covariance $\Sigma(||x_i-x_j||)$. A thin-plate spline is a special case of Kriging -- the `fields` package function `Tps` actually calls `Krig` internally.
+
+Many more packages. See `gstat`, `geoR` and `geoRglm` among others.
+
+Working with vector data
+========================================================
+Interpolation and Kriging
+
+```{r}
+oz.k = Krig(coordinates(ozone), ozone$median, theta = 20)
+show(oz.k)
+```
+
+Working with vector data
+========================================================
+Interpolation and Kriging
+
+```{r fig.width = 12}
+surface(oz.k)
+points(coordinates(ozone), pch = 19)
+```
+
+Working with vector data
+========================================================
+Interpolation and Kriging
+
+```{r fig.width = 12}
+se = predictSurfaceSE(oz.k)
+plot.surface(se)
+points(coordinates(ozone), pch = 19)
+```
+
+Working with vector data
+========================================================
+type: sub-section
+- Simple features
+- The `rgdal` package
+- Vector data IO
+- `sp` classes
+- Creating vector data
+- Plotting vector data
+- Reprojecting data
+- The `rgeos` library
+- Geometry operators
+- Basic point processes
+- Interpolation and Kriging

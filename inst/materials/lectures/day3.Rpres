@@ -1,0 +1,378 @@
+```{r setup, include=FALSE}
+opts_chunk$set(cache=TRUE)
+```
+
+Geospatial Data Analysis in R
+========================================================
+author: Timothy H. Keitt
+date: May 23, 2018
+width: 1440
+height: 900
+
+Working with raster data
+========================================================
+type: section
+
+Working with raster data
+========================================================
+type: sub-section
+- Raster data
+- `sp` raster classes
+- the `raster` package
+- correlogram example
+
+Working with raster data
+========================================================
+type: sub-section
+- **Raster data**
+- `sp` raster classes
+- the `raster` package
+- correlogram example
+
+Working with raster data
+========================================================
+Raster data
+
+<img src="images/data_models_buffer.gif" height = 500 />
+
+Location is implicit using row and column offsets
+
+Working with raster data
+========================================================
+Raster data
+
+- Models spatial field of measurements
+- May have a mask to indicate region of interest
+- Cells can represent
+  - Point measurements, usually at cell center
+  - Areal data integrated over the cell surface
+- Unfortunately not always made explicit
+
+***
+
+<img src="images/data_models_buffer.gif" />
+
+Working with raster data
+========================================================
+type: sub-section
+- Raster data
+- **`sp` raster classes**
+- the `raster` package
+- correlogram example
+
+Working with raster data
+========================================================
+`sp` raster classes
+
+Two types
+- `SpatialPixels` -- `SpatialPixelsDataFrame`
+  - Models an incomplete array of raster locations
+- `SpatialGrid` -- `SpatialGridDataFrame`
+  - Models a fully gridded raster dataset
+
+Working with raster data
+========================================================
+`sp` raster classes
+
+```{r}
+library(sp)
+x = matrix(TRUE, 10, 10)
+x[lower.tri(x)] = FALSE
+show(x)
+```
+
+Working with raster data
+========================================================
+`sp` raster classes
+
+```{r}
+pts = which(x, arr.ind = TRUE)
+head(pts)  # note that these are y, x coordinates
+names(pts) = c("x", "y")  # change them for convenience
+```
+
+Working with raster data
+========================================================
+`sp` raster classes
+
+```{r}
+spts = SpatialPoints(pts)
+spix = SpatialPixels(spts)
+head(spix)
+```
+
+Working with raster data
+========================================================
+`sp` raster classes
+
+```{r}
+plot(spix, pch = 21, bg = "steelblue", cex = 2)
+box()
+```
+
+Working with raster data
+========================================================
+`sp` raster classes
+
+```{r}
+library(lattice)
+spixdf = SpatialPointsDataFrame(spix, data.frame(id = 1:nrow(pts)))
+trellis.par.set(regions = list(col = topo.colors(100)))
+spplot(spixdf, cex = 3)   # colored by id
+```
+
+Working with raster data
+========================================================
+`sp` raster classes
+
+```{r}
+spixdf$rand = rpois(nrow(spixdf), 3)        # Add a column
+trellis.par.set(regions = list(col = topo.colors(100)))
+spplot(spixdf, "rand", cex = spixdf$rand)   # colored by rand
+```
+
+Working with raster data
+========================================================
+`sp` raster classes
+
+```{r}
+data(meuse.grid)  # ordinary data frame
+head(meuse.grid)
+coordinates(meuse.grid) = ~ x + y  # x, y are column names
+class(meuse.grid)
+```
+
+Working with raster data
+========================================================
+`sp` raster classes
+
+```{r}
+gridded(meuse.grid)           # is there a grid topology attribute?
+gridded(meuse.grid) = TRUE    # add the grid topology attribute
+meuse.grid@grid               # describes the grid layout
+```
+
+Working with raster data
+========================================================
+`sp` raster classes
+
+```{r fig.width = 12}
+spplot(meuse.grid, par.strip.text = list(cex = 3))
+```
+
+Working with raster data
+========================================================
+`sp` raster classes
+
+`SpatialGrid` -- `SpatialGridDataFrame` work a bit differently. First we define the grid, then combine it with the data.
+
+```{r}
+g = GridTopology(c(0.5, 0.5), c(1, 1), c(100, 100))
+class(g)
+summary(g)
+```
+
+Working with raster data
+========================================================
+`sp` raster classes
+
+```{r}
+sg = SpatialGrid(g)
+summary(sg)
+```
+
+Working with raster data
+========================================================
+`sp` raster classes
+
+```{r}
+library(fields)
+xy = list(x = 0:99 + 0.5, y = 0:99 + 0.5)
+surf = sim.rf(Exp.image.cov(grid = xy, theta = 20, setup = TRUE))
+image(surf, col = topo.colors(100))
+```
+
+Working with raster data
+========================================================
+`sp` raster classes
+
+```{r}
+sgdf = SpatialGridDataFrame(sg, data.frame(as.vector(surf)))
+summary(sgdf)
+```
+
+Working with raster data
+========================================================
+`sp` raster classes
+
+```{r}
+image(sgdf, col = topo.colors(100))
+```
+
+Working with raster data
+========================================================
+type: sub-section
+- Raster data
+- `sp` raster classes
+- **the `raster` package**
+- correlogram example
+
+Working with raster data
+========================================================
+the `raster` package
+
+- Extensive GIS capabilities for raster gridded datasets
+- Work with in-memory and on-disk data
+- Bind together multiple files into a single object
+- Raster algebra -- evaluate expression of raster layers
+- Reprojection, resampling, recoding
+- Spatial intersections and unions
+- Clustering, rasterization, model prediction
+- Plotting, format conversions
+
+Working with raster data
+========================================================
+the `raster` package
+
+```{r}
+library(raster)
+x = raster(nrows = 4, ncols = 4, xmn = 0, xmx = 4, ymn = 0, ymx = 4)
+show(x)   # empty raster
+```
+
+Working with raster data
+========================================================
+the `raster` package
+
+```{r}
+x[]     # retrieve stored values
+x[] = rpois(16, 3)
+x[]
+```
+
+Working with raster data
+========================================================
+the `raster` package
+
+```{r}
+plot(x)
+```
+
+Working with raster data
+========================================================
+the `raster` package
+
+```{r}
+values(x)
+x = x + 1
+values(x)
+```
+
+Working with raster data
+========================================================
+the `raster` package
+
+```{r}
+y = aggregate(x, 2, "mean")
+values(y)
+plot(y)
+```
+
+Working with raster data
+========================================================
+the `raster` package
+
+```{r}
+filename = system.file("external/test.grd", package="raster")
+r = raster(filename)
+plot(r, main='RasterLayer from file')
+```
+
+Working with raster data
+========================================================
+the `raster` package
+
+```{r}
+b <- brick(system.file("external/rlogo.grd", package="raster"))
+plot(b)
+```
+
+Working with raster data
+========================================================
+the `raster` package
+
+```{r}
+plotRGB(b)
+```
+
+Working with raster data
+========================================================
+the `raster` package
+
+```{r}
+summary(sgdf)
+```
+
+Working with raster data
+========================================================
+the `raster` package
+
+```{r}
+r = raster(sgdf)
+summary(r)
+```
+
+Working with raster data
+========================================================
+the `raster` package
+
+```{r}
+r = raster(sgdf)
+plot(r)
+```
+
+Working with raster data
+========================================================
+type: sub-section
+- Raster data
+- `sp` raster classes
+- the `raster` package
+- **correlogram example**
+
+Working with raster data
+========================================================
+the `raster` package
+
+```{r}
+expsurf = data.frame(cbind(coordinates(r), values(r)))
+names(expsurf) = c("x", "y", "z")
+head(expsurf)
+```
+
+Working with raster data
+========================================================
+the `raster` package
+
+```{r}
+library(spatial)
+es.kr = surf.ls(2, expsurf)   # a Kriging model
+correlogram(es.kr, 100, xlim = c(0, 30))
+```
+
+Working with raster data
+========================================================
+the `raster` package
+
+```{r}
+correlogram(es.kr, 100, xlim = c(0, 30), cex = 2, pch = 19)
+d = seq(0, 30, 0.5)
+lines(d, expcov(d, 5), lwd = 3, col = "red")
+```
+
+Working with raster data
+========================================================
+type: sub-section
+- Raster data
+- `sp` raster classes
+- the `raster` package
+- correlogram example
