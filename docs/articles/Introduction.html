@@ -152,18 +152,18 @@ Example point, linestring and polygon
 <a class="sourceLine" id="cb3-6" data-line-number="6"><span class="co">#&gt; </span></a>
 <a class="sourceLine" id="cb3-7" data-line-number="7"><span class="co">#&gt; Residuals:</span></a>
 <a class="sourceLine" id="cb3-8" data-line-number="8"><span class="co">#&gt;     Min      1Q  Median      3Q     Max </span></a>
-<a class="sourceLine" id="cb3-9" data-line-number="9"><span class="co">#&gt; -2.2843 -0.4760  0.1668  0.6199  1.2503 </span></a>
+<a class="sourceLine" id="cb3-9" data-line-number="9"><span class="co">#&gt; -2.1286 -0.5857  0.1070  0.7115  1.6415 </span></a>
 <a class="sourceLine" id="cb3-10" data-line-number="10"><span class="co">#&gt; </span></a>
 <a class="sourceLine" id="cb3-11" data-line-number="11"><span class="co">#&gt; Coefficients:</span></a>
 <a class="sourceLine" id="cb3-12" data-line-number="12"><span class="co">#&gt;             Estimate Std. Error t value Pr(&gt;|t|)    </span></a>
-<a class="sourceLine" id="cb3-13" data-line-number="13"><span class="co">#&gt; (Intercept)   0.7478     0.2230   3.353  0.00354 ** </span></a>
-<a class="sourceLine" id="cb3-14" data-line-number="14"><span class="co">#&gt; x             2.0374     0.2595   7.850 3.21e-07 ***</span></a>
+<a class="sourceLine" id="cb3-13" data-line-number="13"><span class="co">#&gt; (Intercept)   1.2792     0.2602   4.916 0.000111 ***</span></a>
+<a class="sourceLine" id="cb3-14" data-line-number="14"><span class="co">#&gt; x             1.8501     0.2046   9.045 4.09e-08 ***</span></a>
 <a class="sourceLine" id="cb3-15" data-line-number="15"><span class="co">#&gt; ---</span></a>
 <a class="sourceLine" id="cb3-16" data-line-number="16"><span class="co">#&gt; Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1</span></a>
 <a class="sourceLine" id="cb3-17" data-line-number="17"><span class="co">#&gt; </span></a>
-<a class="sourceLine" id="cb3-18" data-line-number="18"><span class="co">#&gt; Residual standard error: 0.9901 on 18 degrees of freedom</span></a>
-<a class="sourceLine" id="cb3-19" data-line-number="19"><span class="co">#&gt; Multiple R-squared:  0.7739, Adjusted R-squared:  0.7614 </span></a>
-<a class="sourceLine" id="cb3-20" data-line-number="20"><span class="co">#&gt; F-statistic: 61.62 on 1 and 18 DF,  p-value: 3.205e-07</span></a>
+<a class="sourceLine" id="cb3-18" data-line-number="18"><span class="co">#&gt; Residual standard error: 1.075 on 18 degrees of freedom</span></a>
+<a class="sourceLine" id="cb3-19" data-line-number="19"><span class="co">#&gt; Multiple R-squared:  0.8197, Adjusted R-squared:  0.8096 </span></a>
+<a class="sourceLine" id="cb3-20" data-line-number="20"><span class="co">#&gt; F-statistic: 81.81 on 1 and 18 DF,  p-value: 4.091e-08</span></a>
 <a class="sourceLine" id="cb3-21" data-line-number="21">intercept &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/stats/topics/coef">coefficients</a></span>(m1)[<span class="dv">1</span>]</a>
 <a class="sourceLine" id="cb3-22" data-line-number="22">slope &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/stats/topics/coef">coefficients</a></span>(m1)[<span class="dv">2</span>]</a>
 <a class="sourceLine" id="cb3-23" data-line-number="23">p1 &lt;-<span class="st"> </span>p1 <span class="op">+</span><span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/ggplot2/topics/geom_abline">geom_abline</a></span>(<span class="dt">slope =</span> slope, <span class="dt">intercept =</span> intercept, <span class="dt">color =</span> <span class="st">"steelblue"</span>)</a>
