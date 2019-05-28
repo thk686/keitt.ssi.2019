@@ -11,6 +11,9 @@ This package contains all the materials for my [Summer Statistics
 Institute](https://stat.utexas.edu/training/ssi) course Geospaital Data
 Analysis with R.
 
+See the [pkgdown](https://pkgdown.r-lib.org/) site
+[here](https://thk686.github.io/keitt.ssi.2019/).
+
 ## Installation
 
 You can install the released version of keitt.ssi.2019 from
