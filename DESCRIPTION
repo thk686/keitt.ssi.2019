@@ -41,7 +41,8 @@ Imports:
     ggmap,
     RStoolbox,
     ggthemes,
-    nycflights13
+    nycflights13,
+    mapproj
 Suggests: 
     knitr,
     rmarkdown,
