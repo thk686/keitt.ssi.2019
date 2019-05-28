@@ -3,7 +3,7 @@ Title: Learning materials for Geospatial Data Analysis in R, part of the UT Summ
 Version: 0.0.0.9000
 Authors@R: person("Timothy", "Keitt", email = "tkeitt@utexas.edu", role = c("aut", "cre"))
 Description: Contains documents for learning geospatial data analysis.
-Depends: R (>= 3.6.0)
+Depends: R (>= 3.5.0)
 License: CCBY-4.0
 Encoding: UTF-8
 LazyData: true
