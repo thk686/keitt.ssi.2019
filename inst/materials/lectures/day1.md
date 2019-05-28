@@ -1203,9 +1203,9 @@ print(a[sample(i), sample(i)]) # row-column permutation
 
 ```
      [,1] [,2] [,3]
-[1,]    8    2    5
-[2,]    9    3    6
-[3,]    7    1    4
+[1,]    6    9    3
+[2,]    5    8    2
+[3,]    4    7    1
 ```
 
 RefresheR
@@ -1379,7 +1379,7 @@ print(c(g(2), f()(2))) # uses x created by f()
 ```
 
 ```
-[1] -3.346907 20.445370
+[1]  6.5240334 -0.4093613
 ```
 
 The factory function is just a convenient way to bind an anonymous environment to the returned closure. I use this all the time to speed up calculations.
@@ -1400,7 +1400,7 @@ print(row.sums)
 ```
 
 ```
-[1]  3.0500616  0.1592766 -2.7607980  2.7362020 -4.6470902
+[1] -0.3583968 -1.4738219  0.6191057 -2.1549036 -0.6935966
 ```
 
 RefresheR
@@ -1418,7 +1418,7 @@ print(row.sums)
 ```
 
 ```
-[1]  3.0500616  0.1592766 -2.7607980  2.7362020 -4.6470902
+[1] -0.3583968 -1.4738219  0.6191057 -2.1549036 -0.6935966
 ```
 
 - Note that variables are bound (copied to the function's environment) at the time of the function definition.
@@ -1665,18 +1665,18 @@ lm(formula = y ~ x)
 
 Residuals:
     Min      1Q  Median      3Q     Max 
--2.4034 -0.6134 -0.0821  0.7563  2.4656 
+-2.0720 -0.7088  0.0185  0.6910  2.4782 
 
 Coefficients:
             Estimate Std. Error t value Pr(>|t|)    
-(Intercept)  1.10024    0.09474   11.61   <2e-16 ***
-x            1.99788    0.09796   20.39   <2e-16 ***
+(Intercept)  1.03133    0.09603   10.74   <2e-16 ***
+x            2.18854    0.08683   25.20   <2e-16 ***
 ---
 Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 
-Residual standard error: 0.9438 on 98 degrees of freedom
-Multiple R-squared:  0.8093,	Adjusted R-squared:  0.8074 
-F-statistic: 415.9 on 1 and 98 DF,  p-value: < 2.2e-16
+Residual standard error: 0.9556 on 98 degrees of freedom
+Multiple R-squared:  0.8664,	Adjusted R-squared:  0.865 
+F-statistic: 635.3 on 1 and 98 DF,  p-value: < 2.2e-16
 ```
 </small>
 
@@ -1737,8 +1737,8 @@ Analysis of Variance Table
 
 Response: y
           Df Sum Sq Mean Sq F value    Pr(>F)    
-x          1 370.45  370.45  415.92 < 2.2e-16 ***
-Residuals 98  87.29    0.89                      
+x          1 580.18  580.18  635.31 < 2.2e-16 ***
+Residuals 98  89.50    0.91                      
 ---
 Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 ```
@@ -1769,14 +1769,14 @@ str(mod1[1:6])
 
 ```
 List of 6
- $ coefficients : Named num [1:2] 1.1 2
+ $ coefficients : Named num [1:2] 1.03 2.19
   ..- attr(*, "names")= chr [1:2] "(Intercept)" "x"
- $ residuals    : Named num [1:100] 0.0799 -0.1732 -2.4034 -0.9406 -0.8275 ...
+ $ residuals    : Named num [1:100] -1.1958 0.0563 -1.4464 -0.7541 0.6201 ...
   ..- attr(*, "names")= chr [1:100] "1" "2" "3" "4" ...
- $ effects      : Named num [1:100] -12.704 -19.247 -2.419 -0.936 -0.809 ...
+ $ effects      : Named num [1:100] -12.687 24.087 -1.347 -0.637 0.748 ...
   ..- attr(*, "names")= chr [1:100] "(Intercept)" "x" "" "" ...
  $ rank         : int 2
- $ fitted.values: Named num [1:100] 0.151 1.419 0.302 2.402 3.96 ...
+ $ fitted.values: Named num [1:100] -1.107 0.654 -0.35 2.345 3.837 ...
   ..- attr(*, "names")= chr [1:100] "1" "2" "3" "4" ...
  $ assign       : int [1:2] 0 1
 ```
@@ -1832,15 +1832,15 @@ print(mod2)
 ```
 Linear mixed model fit by REML ['lmerMod']
 Formula: y ~ x + (1 | z)
-REML criterion at convergence: 292.4321
+REML criterion at convergence: 284.3722
 Random effects:
  Groups   Name        Std.Dev.
- z        (Intercept) 2.1677  
- Residual             0.9985  
+ z        (Intercept) 1.9888  
+ Residual             0.9578  
 Number of obs: 100, groups:  z, 2
 Fixed Effects:
 (Intercept)            x  
-    -0.4666       2.0447  
+    -0.4823       1.8987  
 ```
 
 RefresheR
@@ -1876,8 +1876,8 @@ ranef(mod2)
 ```
 $z
   (Intercept)
-0    1.529555
-1   -1.529555
+0    1.402999
+1   -1.402999
 
 with conditional variances for "z" 
 ```
@@ -1902,7 +1902,7 @@ show(mod2@beta)  # show is S4 print
 ```
 
 ```
-[1] -0.4665906  2.0447131
+[1] -0.4822955  1.8987147
 ```
 Fixed effects stored in `beta`
 
@@ -1915,10 +1915,10 @@ head(mod2@frame, n = 3)  # the data
 ```
 
 ```
-          y           x z
-1 -1.833552 -0.52892952 1
-2  4.635120  2.23648144 0
-3 -2.274458  0.01527822 1
+            y         x z
+1  1.99277124 0.4223786 0
+2 -0.32581618 1.2849734 1
+3  0.07546225 0.9662490 1
 ```
 
 ```r
@@ -1926,10 +1926,10 @@ head(slot(mod2, 'frame'), n = 3)
 ```
 
 ```
-          y           x z
-1 -1.833552 -0.52892952 1
-2  4.635120  2.23648144 0
-3 -2.274458  0.01527822 1
+            y         x z
+1  1.99277124 0.4223786 0
+2 -0.32581618 1.2849734 1
+3  0.07546225 0.9662490 1
 ```
 - It is bad design to ever access slots directly
 - Better to treat slots as protected data
@@ -1979,13 +1979,13 @@ foreach(i = 1:3) %do% rnorm(1)
 
 ```
 [[1]]
-[1] -0.3347296
+[1] -0.3790396
 
 [[2]]
-[1] 0.131936
+[1] -0.9846234
 
 [[3]]
-[1] 0.2147089
+[1] -0.7216653
 ```
 
 The real action is in the `%do%` infix operator.
@@ -2001,7 +2001,7 @@ foreach(i = 1:3, .combine = c) %do% rnorm(1)
 ```
 
 ```
-[1]  1.2642349  0.3642307 -0.1599080
+[1] -0.82188854  0.09837345 -0.66390420
 ```
 
 This is a form of map (the expression) and reduce (the .combine function)
@@ -2018,7 +2018,7 @@ system.time(f())
 
 ```
    user  system elapsed 
-  1.140   0.037   1.178 
+  0.828   0.038   0.900 
 ```
 
 About 1.5 seconds on my laptop
@@ -2036,7 +2036,7 @@ system.time(
 
 ```
    user  system elapsed 
-  4.420   0.042   4.462 
+  3.327   0.054   3.476 
 ```
 
 About 6.5 seconds on my laptop
@@ -2056,7 +2056,7 @@ system.time(
 
 ```
    user  system elapsed 
-  0.014   0.014   0.999 
+  1.461   0.107   2.292 
 ```
 
 About 2.5 seconds on my laptop. Here `%dopar%` automatically splits the computation across all of the available cores.

@@ -39,7 +39,8 @@ Imports:
     spatial,
     proj4,
     ggmap,
-    RStoolbox
+    RStoolbox,
+    ggthemes
 Suggests: 
     knitr,
     rmarkdown,
