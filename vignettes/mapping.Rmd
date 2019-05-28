@@ -1,0 +1,214 @@
+---
+title: "Mapping Data"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Mapping Data}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+```{r setup}
+library(keitt.ssi.2019)
+```
+
+This document is typeset in [RMarkdown](https://rmarkdown.rstudio.com/).
+
+## What are geospatial data?
+
+Geospatial data are data that have location attributes, which reference locations on the earth's surface. Examples include measurements of elevation above sea level, the median income in a census block or the location of a point-of-interest.
+
+The most basic location attribute is a georeferenced point, usually given as degrees longitude and latitude. The longitude/latitude coordinate system is often referred to as *geographic coordinates* to distinguish them from *map coordiantes*, which exist in two dimensions as printed on a map. The picture below illustrates latitude/longitude coordinates.
+
+<img src="https://upload.wikimedia.org/wikipedia/commons/3/36/Geographic_coordinates_sphere.png" alt="Figure" height="256" width="256">
+
+Geographic coordinates are natural in the sense that, ignoring details like rocky overhangs, a straight line angling from the center of the earth will emerge at a unique location on the surface, regardless of the exact shape of the earth. Many analyses assume a *spherical earth model*, which we know is wrong, but is nonetheless sufficiently accurate for many applications.
+
+Generally speaking, if you only need to know where something is within a few tens-of-meters, the details of the earth model is not terribly important. For demanding applications like precision surveying, which may involve sub-centimeter requirements, an accurate model of the earth's surface is required. Precision applications typically employ a *geoid model* that has an undulating height profile. The undulations arise through complex earth processes that involve plate tectonics, ocean weight and gravitational variation. Here is a typical geoid rendered in 3D. The vertical undulations are greatly exaggerated. They are in reality invisible to the naked eye.
+
+<img src="https://appel.nasa.gov/wp-content/uploads/sites/2/2008/03/1a3-300x290.jpg" alt="Figure" height="256" width="256">
+
+More commonly, an *ellipsoid model* is employed, which extend the spherical model with an extra parameters that specifies the amount of flattening of the poles owing to the earth's rotation. For example, the World Geodetic System (WGS 84) used by GPS is based on an ellipsoidal earth model. An ellipsoid is defined by two radii as shown in this figure.
+
+<img src="https://upload.wikimedia.org/wikipedia/commons/thumb/8/8c/Ellipsoid_revolution_oblate_aab_auxiliary_sphere.svg/327px-Ellipsoid_revolution_oblate_aab_auxiliary_sphere.svg.png" alt="Figure" height="256" width="256">
+
+While this is good to know, it will generally not impact most studies. Often we care more about *relative* accuracy within a region spanning kilometers rather than being able to go out into the field and precisely locate a point based on its coordinates. An important caveat however is that you never want to mix geospatial data from different datums or map projections (discussed below). It is critical to transform all sources of data into the same spatial reference system or else nonsense will ensue. Multiple layers of geospatial data, all mutually referenced, is sometimes referred to as a *coverage* and is a key concept in Geographic Information Systems.
+
+## Mapping geospatial data
+
+Data visualization is a first step towards data analysis. R has an extensive library of routines for mapping geospatial data. A thorough introduction to data visualization in R is available in the [R for Data Science](http://r4ds.had.co.nz/) book.
+
+First we need to load some packages. The grey blocks show R code. Any output is shown below the block.
+
+```{r}
+library(magrittr) # enable %>% pipe operator
+library(ggplot2) # plotting functions
+library(ggmap) # map plotting functions
+library(leaflet) # fancy map plotting functions
+library(ggthemes) # extra plot styles
+library(proj4) # advanced map projections
+library(raster) # for raster data
+library(sf) # vector data
+```
+
+The ```p_load``` command will install packages if they are not present already. The SSI package depends on ```pacman``` so it should already be installed. The ```::``` syntax calls the function on the right-hand-side from the package given on the left-hand-side. This way, we do not have to load the ```pacman``` package itself.
+
+Now we load some data.
+
+```{r}
+data(airports, package = "nycflights13") # flights to NYC
+knitr::kable(head(airports)) # fancy table output first few rows
+```
+
+In the above code, ```data``` is a command that loads data supplied by a package into your current working environment. These data will be stored in a tabular data structure called a data frame. Data frames have a collection of named columns all of equal length. The ```head``` command extracts, by default, the first six rows. The ```kable``` function converts a data frame to fancy output used by [knitr](https://yihui.name/knitr/) to render the document.
+
+These data contain longitudes and latitudes that we can plot. Note that because your computer screen is flat and not spherical (unless we delve into 3D rendering), we are implicitly using a map projection when we plot the data. More on this to come.
+
+The following demonstration uses the [ggmap](https://cran.r-project.org/package=ggmap) package. A nice feature of ggmap is that it can download a basemap from Google using the maps API.
+
+Unfortunately the example below no longer works as Google has made their mapping API proprietary. You get get a Google API key by cliking [here](https://cloud.google.com/maps-platform/). You will then have to call ```register_google```.
+
+``` r
+basemap <- get_map("Texas", zoom = 6, maptype = "hybrid", force = FALSE, messaging = FALSE)
+ggmap(basemap) +
+  geom_point(aes(x = lon, y = lat), data = airports, color = "yellow", alpha = 0.5)
+```
+
+So if you are new to R, that will be a lot to take in. Don't despair, we'll break it down into steps later. A good source to study is the [R for Data Scinece](http://r4ds.had.co.nz/) book. It covers ```ggplot``` (the base for ```ggmap```) in detail.
+
+There are some limitation using ```ggmap```. It is difficult to set the zoom level correctly and adjust the aspect ratio of the map. The [QGIS](https://www.qgis.org/) project does this much better. You may also find that Google will deny downloading of the basemap owing to a quota on downloads using the maps API. There are some work-arounds for this. Nonetheless, this does demonstrate some of the mapping capabilities of R.
+
+Another mapping package for R is [leaflet](https://cran.r-project.org/package=leaflet). It generates maps using a [JavaScript API](https://leafletjs.com/) and then renders them locally. Leaflet is quite sophisticated. It returns JavaScript code that builds an interactive map with zooming and other controls as options.
+
+```{r fig.width=6, fig.height=6}
+leaflet() %>%
+  addTiles() %>%
+  addCircleMarkers(
+    lng = ~ lon, lat = ~ lat, radius = ~ 5,
+    popup = ~ name, data = airports
+  ) %>%
+  setView(lng = -97.7, lat = 30.2, zoom = 10)
+```
+
+Try zooming out on the map (this will not work in PDF, only HTML). The blue markers are popups with the name of the airport. Leaflet has quite nice basemaps.
+
+Notice the use of the ```~``` operator in the above code. It is an example of R's [formula syntax](https://www.datacamp.com/community/tutorials/r-formula-tutorial). A formula is a placeholder used to extract information from a data frame, in this case, the ```airports``` data frame. This example also uses the ```%>%``` [pipe operator](http://r4ds.had.co.nz/pipes.html).
+
+## Map Projections
+
+So far we have just demonstrated some of the mapping capabilities of R. When working with geospatial data, we must be aware of the reference system that defines what a coordinate means in terms of its location on the earth's surface. There are two types of coordinate systems: *geographical* (a.k.a. *geodetic*) coordinates given as angles and *map* (a.k.a. *cartesian*) coordinates given in $x$ and $y$ positions in the plane. Unlike geographical coordinates, which are fairly simple to map onto the earth's surface, map coordinate always involve some degree, often considerable, of distortion. This distortion arises because we must project the roughly spherical earth onto a flat surface. Picture how you might show the whole surface of a beach-ball laid flat on the sand. There are many, many cartesian coordinate systems in cartography. Let's explore some.
+
+First we will grab some data from the ```maps``` package.
+
+```{r warning=FALSE}
+world <- ggplot2::map_data("world") # retrieve from maps package
+knitr::kable(head(world))
+```
+
+The ```ggplot2``` package has transformed the map data into a data frame where each row contains a single longitude-latitude pair. The ```group``` column specifies which coordinates belong to the same polygon. Now let's plot it.
+
+```{r fig.width=6, fig.height=4}
+world_plot <- ggplot(world, aes(long, lat)) +
+  geom_map(aes(map_id = region), map = world, color = "#2b2b2b", fill = NA, size = 0.15) +
+  theme_map()
+world_plot # Tell R to "print" the object, which in this case draws the map
+```
+
+This is not an especially attractive map projection. We have simply mapped each longitude and latitude directly to cartesian x-y coordinates. This is known as the the *Equirectangular* map projection. You can find an extensive list and illustrations of different map projections on [wikipedia](https://en.wikipedia.org/wiki/List_of_map_projections). The ```ggplot2``` package knows about other map projections. We can try for example the *Mercator* projection.
+
+```{r fig.width=6, fig.height=4}
+world_plot + coord_map() # default is Mercator
+```
+
+This is not much better and we all see some artifacts caused by some of the polygons wrapping around the 180/-180 degree breakpoint in longitudes. Some software will handle this correctly and some will not. A common solution is to split the polygons into separate east and west parts.
+
+Notice how distorted is the output. Greenland and Antarctica look dramatically larger than Africa. This is a necessary artifact of forcing a spheroid onto a plane. There are however much better projections to use when mapping the entire earth. Each represents a different trade-off of different forms of distortion. I like the *Gall* projection for global boundaries.
+
+```{r fig.width=6, fig.height=4}
+world_plot + coord_map("gall", lat0 = 0) # projection defs are from the mapproj package
+```
+
+The Gall projection still shows some distortion albeit not as bad as the Mercator.
+
+Other projections are better for small regions of the globe. The Lambert Azimuthal projection used by the US National Atlas is especially suited to showing the U.S. boundaries. Some details of this projection can be found at [spatialreference.org](http://spatialreference.org/ref/epsg/2163/proj4js/). This projection is not supported by ```coord_map``` so we will use the [proj4](https://cran.r-project.org/package=proj4) package instead.
+
+```{r fig.width=6, fig.height=4}
+usa <- subset(world, region == "USA") # filter the data
+usa_trans <- proj4::project(
+  subset(usa, select = c("long", "lat")),
+  "+proj=laea +lat_0=45 +lon_0=-100 +x_0=0 +y_0=0 +a=6370997 +b=6370997 +units=m +no_defs"
+)
+usa_trans <- cbind(usa_trans, subset(usa, select = c("group", "order", "region", "subregion")))
+ggplot(usa_trans, aes(x, y)) +
+  geom_map(aes(map_id = region), map = usa_trans, color = "darkgrey", fill = "lightgrey") +
+  theme_map() + coord_fixed()
+```
+
+This is a much better map. The projection was specifically chosen by the US National Atlas so that Alaska and Hawaii would appear relatively close to the lower 48 states. The projection specification string beginning with "+proj" is a convention developed by the [Proj4](https://proj4.org/) project, originally developed by the USGS and now an important part of the [OSGEO](https://www.osgeo.org/) world. I cut-'n-pasted that string from [here](http://spatialreference.org/ref/epsg/2163/).
+
+In the above, ```ggplot``` initializes a plot object, which when printed will produce the plot. The ```aes``` function maps variables in the supplied data frame (```usa_trans```) onto the $x$ and $y$ axes. The ```geom_map``` command creates a ggplot layer that will display the map when printed. 
+
+### What you need to know about map projections
+
+As we stated before, it is crucial when analyzing geospatial data that all layers have the same reference system. Which reference system is best depends on the specific task. Each map projection will minimize certain aspects of distortion at the expense of others. A *conformal* projection attempts to preserve the shape of polygons at the expense of incorrect polygon area, whereas an *equal-area* projection will distort shapes (turning angles) to preserve area. Note that the degree to which these goals are met depends on where the polygon lies in the map. Generally the further away you are from some defining *meridian* (a latitude or longitude line), the worse the distortion. So called *equidistant* projections are only "equidistant", meaning relative map distances exactly translate to distance on the earth's surface, along certain meridians. Away from these meridians, there will be distortion.
+
+Also be aware that some GIS systems do not natively recognize the difference between geodetic and cartesian coordinates. Some analysis libraries will interpret all coordinates as cartesian and use, for example, euclidean distance $(D = \sqrt{\Delta x^2+\Delta y^2})$ calculations, even though this is inaccurate for latitude-longitude coordinates. The basic rule is that when working in a small region, say within the state of Texas, then use a cartesian map projection. Popular choices are [UTM](http://spatialreference.org/ref/epsg/32614/) or an [Equal Area](http://spatialreference.org/ref/epsg/nad83-texas-centric-albers-equal-area/) projection. Just be aware that calculations of distance and area will not be true to the earth's surface. The errors are usually negligible for smaller areas. For true point-to-point distance, you may wish to use geodetic coordinates. The calculation requires a special algorithm that can be found in a number of R packages. Also, when working with data spanning continents, it may be better to work in latitude-longitude rather than map coordinates. If your software is designed to work with these non-cartesian coordinates, then computations of area and distance will be true. If not, you should project to an equal area projection for area calculations.
+
+## Raster and vector data types
+
+Geospatial data are either stored in raster or vector from. A raster is a grid of cells where the coordinates of each cell can be calculated from the number of rows and columns they are offset from the origin. The origin of a raster is typically the center of the bottom-right cell. However different data formats and GIS systems may use different definitions of the origin, so beware of the difference. Raster data in R is handled by the [raster package](https://cran.r-project.org/package=raster).
+
+Vector data are collections of $x, y$ (or sometimes $x, y, z$ or even $x, y, z, t$) coordinates. Unlike in the raster case, every single vector datum must be attributed with its location. I call this "explicit" coordinates, whereas raster locations are "implicit". Note that a raster layer can easily be converted to a vector layer by simply listing the table of ```x, y, value``` triples, where the $x, y$ coordinates are computed for each cell. It is more involved to convert vector data to raster.
+
+This illustration shows the difference between a raster (pixel) "A" and a vector "A" defined by individual point locations.
+
+<img src="https://upload.wikimedia.org/wikipedia/commons/thumb/e/e8/Bitmap_vs_vector.svg/508px-Bitmap_vs_vector.svg.png" alt="Figure" height="256" width="256">
+
+Here's an example of loading and ploting raster data from the ```raster``` package [vignette](https://cran.r-project.org/web/packages/raster/vignettes/Raster.pdf).
+
+Note that this example uses the function ```fortify.raster``` that is defined in this package. It is not generally available in ```ggplot2```.
+
+```{r fig.width=6, fig.height=4}
+filename <- system.file("external/test.grd", package = "raster")
+ras <- raster(filename)
+print(ras)
+ggplot(fortify(ras)) +
+  geom_raster(aes(x, y, fill = test)) +
+  xlab("Easting") + ylab("Northing") +
+  scale_fill_distiller(palette = "Spectral", name = "Data", na.value = NA) +
+  theme_bw() + coord_fixed()
+```
+
+This example loads raster data from a file distributed with the ```raster``` package. Here I have modified the example to use ```ggplot```. Notice that the raster layer has the projection attribute ```EPSG:28992```. You can look up that definition [here](http://spatialreference.org/ref/epsg/28992/).
+
+Here's an example of loading and plotting vector data using the ```sf``` package.
+
+```{r fig.width=6, fig.height=4}
+nc <- st_read(system.file("shape/nc.shp", package = "sf"), quiet = TRUE)
+print(nc)
+ggplot(nc) +
+  geom_sf(aes(fill = SID79)) +
+  scale_fill_distiller(palette = "PRGn") +
+  theme_bw()
+```
+
+Notice that in both cases (```raster``` and ```sf```), the map projection information is stored in the object's metadata fields.
+
+## Summary
+
+1. Geospatial data are those that have attributes linking the data to a region or place on the globe. They combine (co)ordinates with a reference system or model linking (co)ordinates to a physical location.
+
+1. R has excellent mapping capabilities. Most modern R application use the ```ggplot2``` library and its derivatives. The ```leaflet``` package creates high quality, interactive maps.
+
+1. R can work with different spatial reference systems and map projections. It is critical that all layers of data for a region be transformed into the same reference system. Not all spatial analysis systems understand different projections and reference systems, so you should read the documentation.
+
+1. Geospatial data come in raster and vector forms. The main packages are ```raster``` and ```sf```.
+
+
+

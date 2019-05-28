@@ -114,5 +114,48 @@ You should be working in [RStudio](https://www.rstudio.com/products/RStudio/). I
 
 First, always create a **project**. Go to File > New Project... in the menus and create a project. Put all of your code and results in the project directory or in subdirectories under the project directory. I keep my projects on cloud storage like [Dropbox](https://www.dropbox.com/) or [Box](https://www.box.com/). When writing packages, I also sync with [GitHub](https://github.com/).
 
-Second, **do not type code directly into the console**. I highly recommend that you always create a file and place your commands into that file. RStudio makes it easy to run those commands singly or all at once. There are three choices in the File > New File menu: R Script, R Notebook, and R Markdown.... I recommend using the notebook interface as it lets you intermix markdown text with R code chunks. However, many first-timers prefer a simple script with embedded comments as it is simpler at first. Use an R markdown file to create standalone documents.
+Second, **do not type code directly into the console**. I highly recommend that you always create a file and place your commands into that file. RStudio makes it easy to run those commands singly or all at once. There are three choices in the File > New File menu: R Script, R Notebook, and R Markdown.... I recommend using the notebook interface as it lets you intermix markdown text with R code chunks. However, many first-timers prefer a simple script with embedded comments as it is simpler at first. Use an R markdown file to create standalone documents. The RStudio IDE has buttons that all you to run single lines of code, selected lines of code, or all lines in a file.
+
+# Some resources to help you get started
+
+## Getting Started
+
+The R landscape is quite expansive with little hamlets of documents interspersed across a vast wilderness of code. This guide aims to get you oriented.
+
+## R Project and CRAN
+
+The first and most important resource is the [R Project website](https://www.r-project.org/index.html). There you will find information on [how to download and install R](https://cloud.r-project.org/) (you may wish to start with [RStudio](https://www.rstudio.com/) rather than install R directly), some [introductory manuals](https://cran.r-project.org/manuals.html), [a few pointers on finding help](https://www.r-project.org/help.html) and critically a link to the [Comprehensive R Archive Network](https://cloud.r-project.org/), a repository containing >10,000 [add-on software packages](https://cloud.r-project.org/web/packages/index.html) for R.
+
+Know that the [manuals](https://cran.r-project.org/manuals.html) from the R Project, while comprehensive, are not particularly accessible and, if you do read them, are much, much easier to read in PDF format than in HTML. I will point you to some better sources later in this document. CRAN does have some useful [Task Views](https://cloud.r-project.org/web/views/), which are curated lists of packages according to specific topics.
+
+## RStudio
+
+The next most important resources is [RStudio](https://www.rstudio.com/). Most users now work with R in RStudio and we will focus exclusively on this approach. If you do not have RStudio installed, download it [here](https://www.rstudio.com/products/rstudio/download/#download). It should have everything you need to get going. Their [Online Learning](https://www.rstudio.com/online-learning/) section has many good resources for learning R and related tools. For this course, [basic R](https://www.rstudio.com/online-learning/#r-programming), [navigating RStudio](https://dss.princeton.edu/training/RStudio101.pdf) and using [R Markdown](https://rmarkdown.rstudio.com/index.html) are important components. Definitely checkout their collection of [cheatsheets](https://www.rstudio.com/resources/cheatsheets/). RStudio also has a [Community Website](https://community.rstudio.com/) where you can ask questions and meet other RStudio users.
+
+## Wickham books
+
+[Handly Wicham](http://hadley.nz/) has produced some excellent reference materials covering [R programming](http://adv-r.had.co.nz/) and [Data Science with R](http://r4ds.had.co.nz/). Although these references cover advanced topics, they are quite accessible and well-written.
+
+## Other resources
+
+A popular place to ask questions is [Stack Overflow](https://stackoverflow.com/questions/tagged/r). The R community also maintains some [email lists](https://www.r-project.org/mail.html). Generally you will want to do a good bit of searching for answers before posting questions on these sites.
+
+## Recommendations
+
+1. For those without any R background, work through the basic [Data Camp R tutorial](https://www.datacamp.com/courses/free-introduction-to-r). Another excellent tutorial for first-timers is [Try R](http://tryr.codeschool.com/). You might look at [R Examples](http://www.rexamples.com/).
+
+1. Read up on creating [R Markdown](https://rmarkdown.rstudio.com/lesson-1.html) documents. I urge you to use R Markdown as your default way to interact with R. This is the gateway to reproducible research.
+
+1. Next you might consider working through the first few chapters of the [R for Data Science book](http://r4ds.had.co.nz/) and, in particular, the [chapter on visualization](http://r4ds.had.co.nz/data-visualisation.html). This may seem a steep hill to climb however making plots is really an entertaining way to begin working in R.
+
+1. Check out the chapters on [data structures](http://adv-r.had.co.nz/Data-structures.html), [subsetting](http://adv-r.had.co.nz/Subsetting.html) and [functions](http://adv-r.had.co.nz/Functions.html) in Advanced R. The presentation is quite accessible to beginners.
+
+1. Take a look at the chapters on [transformations](http://r4ds.had.co.nz/transform.html), [tibbles](http://r4ds.had.co.nz/tibbles.html) and [pipes](http://r4ds.had.co.nz/pipes.html) in R for Data Science. These are building blocks for applying high-level functions to tabular data.
+
+With a few hours of effort, you should be able to begin using R. Remember that it takes years to become an expert, so be patient!
+
+
+
+
+
 

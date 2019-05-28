@@ -37,7 +37,10 @@ Imports:
     spatstat.data,
     maptools,
     fields,
-    spatial
+    spatial,
+    proj4,
+    ggmap,
+    RStoolbox
 Suggests: 
     knitr,
     rmarkdown
