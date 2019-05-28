@@ -29,7 +29,6 @@ Imports:
     RPostgreSQL,
     iterators,
     foreach,
-    doMC,
     knitr,
     printr,
     geosphere,
@@ -43,7 +42,8 @@ Imports:
     RStoolbox
 Suggests: 
     knitr,
-    rmarkdown
+    rmarkdown,
+    doMC
 VignetteBuilder: knitr
 RoxygenNote: 6.1.1
 URL: https://github.com/thk686/keitt.ssi.2019
