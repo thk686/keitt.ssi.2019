@@ -40,7 +40,8 @@ Imports:
     proj4,
     ggmap,
     RStoolbox,
-    ggthemes
+    ggthemes,
+    nycflights13
 Suggests: 
     knitr,
     rmarkdown,
