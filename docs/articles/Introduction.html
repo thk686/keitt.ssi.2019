@@ -55,6 +55,9 @@
 <li>
       <a href="../articles/Introduction.html">Introduction</a>
     </li>
+    <li>
+      <a href="../articles/mapping.html">Mapping Data</a>
+    </li>
   </ul>
 </li>
       </ul>
@@ -151,19 +154,19 @@ Example point, linestring and polygon
 <a class="sourceLine" id="cb3-5" data-line-number="5"><span class="co">#&gt; lm(formula = y ~ x, data = xy)</span></a>
 <a class="sourceLine" id="cb3-6" data-line-number="6"><span class="co">#&gt; </span></a>
 <a class="sourceLine" id="cb3-7" data-line-number="7"><span class="co">#&gt; Residuals:</span></a>
-<a class="sourceLine" id="cb3-8" data-line-number="8"><span class="co">#&gt;     Min      1Q  Median      3Q     Max </span></a>
-<a class="sourceLine" id="cb3-9" data-line-number="9"><span class="co">#&gt; -2.1286 -0.5857  0.1070  0.7115  1.6415 </span></a>
+<a class="sourceLine" id="cb3-8" data-line-number="8"><span class="co">#&gt;      Min       1Q   Median       3Q      Max </span></a>
+<a class="sourceLine" id="cb3-9" data-line-number="9"><span class="co">#&gt; -1.07766 -0.47037 -0.02241  0.60384  1.02063 </span></a>
 <a class="sourceLine" id="cb3-10" data-line-number="10"><span class="co">#&gt; </span></a>
 <a class="sourceLine" id="cb3-11" data-line-number="11"><span class="co">#&gt; Coefficients:</span></a>
 <a class="sourceLine" id="cb3-12" data-line-number="12"><span class="co">#&gt;             Estimate Std. Error t value Pr(&gt;|t|)    </span></a>
-<a class="sourceLine" id="cb3-13" data-line-number="13"><span class="co">#&gt; (Intercept)   1.2792     0.2602   4.916 0.000111 ***</span></a>
-<a class="sourceLine" id="cb3-14" data-line-number="14"><span class="co">#&gt; x             1.8501     0.2046   9.045 4.09e-08 ***</span></a>
+<a class="sourceLine" id="cb3-13" data-line-number="13"><span class="co">#&gt; (Intercept)   0.8519     0.1615   5.277 5.12e-05 ***</span></a>
+<a class="sourceLine" id="cb3-14" data-line-number="14"><span class="co">#&gt; x             1.6412     0.1829   8.972 4.61e-08 ***</span></a>
 <a class="sourceLine" id="cb3-15" data-line-number="15"><span class="co">#&gt; ---</span></a>
 <a class="sourceLine" id="cb3-16" data-line-number="16"><span class="co">#&gt; Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1</span></a>
 <a class="sourceLine" id="cb3-17" data-line-number="17"><span class="co">#&gt; </span></a>
-<a class="sourceLine" id="cb3-18" data-line-number="18"><span class="co">#&gt; Residual standard error: 1.075 on 18 degrees of freedom</span></a>
-<a class="sourceLine" id="cb3-19" data-line-number="19"><span class="co">#&gt; Multiple R-squared:  0.8197, Adjusted R-squared:  0.8096 </span></a>
-<a class="sourceLine" id="cb3-20" data-line-number="20"><span class="co">#&gt; F-statistic: 81.81 on 1 and 18 DF,  p-value: 4.091e-08</span></a>
+<a class="sourceLine" id="cb3-18" data-line-number="18"><span class="co">#&gt; Residual standard error: 0.678 on 18 degrees of freedom</span></a>
+<a class="sourceLine" id="cb3-19" data-line-number="19"><span class="co">#&gt; Multiple R-squared:  0.8173, Adjusted R-squared:  0.8071 </span></a>
+<a class="sourceLine" id="cb3-20" data-line-number="20"><span class="co">#&gt; F-statistic:  80.5 on 1 and 18 DF,  p-value: 4.61e-08</span></a>
 <a class="sourceLine" id="cb3-21" data-line-number="21">intercept &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/stats/topics/coef">coefficients</a></span>(m1)[<span class="dv">1</span>]</a>
 <a class="sourceLine" id="cb3-22" data-line-number="22">slope &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/stats/topics/coef">coefficients</a></span>(m1)[<span class="dv">2</span>]</a>
 <a class="sourceLine" id="cb3-23" data-line-number="23">p1 &lt;-<span class="st"> </span>p1 <span class="op">+</span><span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/ggplot2/topics/geom_abline">geom_abline</a></span>(<span class="dt">slope =</span> slope, <span class="dt">intercept =</span> intercept, <span class="dt">color =</span> <span class="st">"steelblue"</span>)</a>
@@ -182,7 +185,49 @@ Example point, linestring and polygon
 <a href="#using-rstudio" class="anchor"></a>Using RStudio</h1>
 <p>You should be working in <a href="https://www.rstudio.com/products/RStudio/">RStudio</a>. I highly recommend forming two habits whenever you are using RStudio.</p>
 <p>First, always create a <strong>project</strong>. Go to File &gt; New Project… in the menus and create a project. Put all of your code and results in the project directory or in subdirectories under the project directory. I keep my projects on cloud storage like <a href="https://www.dropbox.com/">Dropbox</a> or <a href="https://www.box.com/">Box</a>. When writing packages, I also sync with <a href="https://github.com/">GitHub</a>.</p>
-<p>Second, <strong>do not type code directly into the console</strong>. I highly recommend that you always create a file and place your commands into that file. RStudio makes it easy to run those commands singly or all at once. There are three choices in the File &gt; New File menu: R Script, R Notebook, and R Markdown…. I recommend using the notebook interface as it lets you intermix markdown text with R code chunks. However, many first-timers prefer a simple script with embedded comments as it is simpler at first. Use an R markdown file to create standalone documents.</p>
+<p>Second, <strong>do not type code directly into the console</strong>. I highly recommend that you always create a file and place your commands into that file. RStudio makes it easy to run those commands singly or all at once. There are three choices in the File &gt; New File menu: R Script, R Notebook, and R Markdown…. I recommend using the notebook interface as it lets you intermix markdown text with R code chunks. However, many first-timers prefer a simple script with embedded comments as it is simpler at first. Use an R markdown file to create standalone documents. The RStudio IDE has buttons that all you to run single lines of code, selected lines of code, or all lines in a file.</p>
+</div>
+<div id="some-resources-to-help-you-get-started" class="section level1">
+<h1 class="hasAnchor">
+<a href="#some-resources-to-help-you-get-started" class="anchor"></a>Some resources to help you get started</h1>
+<div id="getting-started" class="section level2">
+<h2 class="hasAnchor">
+<a href="#getting-started" class="anchor"></a>Getting Started</h2>
+<p>The R landscape is quite expansive with little hamlets of documents interspersed across a vast wilderness of code. This guide aims to get you oriented.</p>
+</div>
+<div id="r-project-and-cran" class="section level2">
+<h2 class="hasAnchor">
+<a href="#r-project-and-cran" class="anchor"></a>R Project and CRAN</h2>
+<p>The first and most important resource is the <a href="https://www.r-project.org/index.html">R Project website</a>. There you will find information on <a href="https://cloud.r-project.org/">how to download and install R</a> (you may wish to start with <a href="https://www.rstudio.com/">RStudio</a> rather than install R directly), some <a href="https://cran.r-project.org/manuals.html">introductory manuals</a>, <a href="https://www.r-project.org/help.html">a few pointers on finding help</a> and critically a link to the <a href="https://cloud.r-project.org/">Comprehensive R Archive Network</a>, a repository containing &gt;10,000 <a href="https://cloud.r-project.org/web/packages/index.html">add-on software packages</a> for R.</p>
+<p>Know that the <a href="https://cran.r-project.org/manuals.html">manuals</a> from the R Project, while comprehensive, are not particularly accessible and, if you do read them, are much, much easier to read in PDF format than in HTML. I will point you to some better sources later in this document. CRAN does have some useful <a href="https://cloud.r-project.org/web/views/">Task Views</a>, which are curated lists of packages according to specific topics.</p>
+</div>
+<div id="rstudio" class="section level2">
+<h2 class="hasAnchor">
+<a href="#rstudio" class="anchor"></a>RStudio</h2>
+<p>The next most important resources is <a href="https://www.rstudio.com/">RStudio</a>. Most users now work with R in RStudio and we will focus exclusively on this approach. If you do not have RStudio installed, download it <a href="https://www.rstudio.com/products/rstudio/download/#download">here</a>. It should have everything you need to get going. Their <a href="https://www.rstudio.com/online-learning/">Online Learning</a> section has many good resources for learning R and related tools. For this course, <a href="https://www.rstudio.com/online-learning/#r-programming">basic R</a>, <a href="https://dss.princeton.edu/training/RStudio101.pdf">navigating RStudio</a> and using <a href="https://rmarkdown.rstudio.com/index.html">R Markdown</a> are important components. Definitely checkout their collection of <a href="https://www.rstudio.com/resources/cheatsheets/">cheatsheets</a>. RStudio also has a <a href="https://community.rstudio.com/">Community Website</a> where you can ask questions and meet other RStudio users.</p>
+</div>
+<div id="wickham-books" class="section level2">
+<h2 class="hasAnchor">
+<a href="#wickham-books" class="anchor"></a>Wickham books</h2>
+<p><a href="http://hadley.nz/">Handly Wicham</a> has produced some excellent reference materials covering <a href="http://adv-r.had.co.nz/">R programming</a> and <a href="http://r4ds.had.co.nz/">Data Science with R</a>. Although these references cover advanced topics, they are quite accessible and well-written.</p>
+</div>
+<div id="other-resources" class="section level2">
+<h2 class="hasAnchor">
+<a href="#other-resources" class="anchor"></a>Other resources</h2>
+<p>A popular place to ask questions is <a href="https://stackoverflow.com/questions/tagged/r">Stack Overflow</a>. The R community also maintains some <a href="https://www.r-project.org/mail.html">email lists</a>. Generally you will want to do a good bit of searching for answers before posting questions on these sites.</p>
+</div>
+<div id="recommendations" class="section level2">
+<h2 class="hasAnchor">
+<a href="#recommendations" class="anchor"></a>Recommendations</h2>
+<ol style="list-style-type: decimal">
+<li><p>For those without any R background, work through the basic <a href="https://www.datacamp.com/courses/free-introduction-to-r">Data Camp R tutorial</a>. Another excellent tutorial for first-timers is <a href="http://tryr.codeschool.com/">Try R</a>. You might look at <a href="http://www.rexamples.com/">R Examples</a>.</p></li>
+<li><p>Read up on creating <a href="https://rmarkdown.rstudio.com/lesson-1.html">R Markdown</a> documents. I urge you to use R Markdown as your default way to interact with R. This is the gateway to reproducible research.</p></li>
+<li><p>Next you might consider working through the first few chapters of the <a href="http://r4ds.had.co.nz/">R for Data Science book</a> and, in particular, the <a href="http://r4ds.had.co.nz/data-visualisation.html">chapter on visualization</a>. This may seem a steep hill to climb however making plots is really an entertaining way to begin working in R.</p></li>
+<li><p>Check out the chapters on <a href="http://adv-r.had.co.nz/Data-structures.html">data structures</a>, <a href="http://adv-r.had.co.nz/Subsetting.html">subsetting</a> and <a href="http://adv-r.had.co.nz/Functions.html">functions</a> in Advanced R. The presentation is quite accessible to beginners.</p></li>
+<li><p>Take a look at the chapters on <a href="http://r4ds.had.co.nz/transform.html">transformations</a>, <a href="http://r4ds.had.co.nz/tibbles.html">tibbles</a> and <a href="http://r4ds.had.co.nz/pipes.html">pipes</a> in R for Data Science. These are building blocks for applying high-level functions to tabular data.</p></li>
+</ol>
+<p>With a few hours of effort, you should be able to begin using R. Remember that it takes years to become an expert, so be patient!</p>
+</div>
 </div>
   </div>
 
@@ -195,6 +240,16 @@ Example point, linestring and polygon
       <li><a href="#the-two-main-types-of-geospatial-data">The two main types of geospatial data</a></li>
       <li><a href="#working-with-r">Working with R</a></li>
       <li><a href="#using-rstudio">Using RStudio</a></li>
+      <li>
+<a href="#some-resources-to-help-you-get-started">Some resources to help you get started</a><ul class="nav nav-pills nav-stacked">
+<li><a href="#getting-started">Getting Started</a></li>
+      <li><a href="#r-project-and-cran">R Project and CRAN</a></li>
+      <li><a href="#rstudio">RStudio</a></li>
+      <li><a href="#wickham-books">Wickham books</a></li>
+      <li><a href="#other-resources">Other resources</a></li>
+      <li><a href="#recommendations">Recommendations</a></li>
+      </ul>
+</li>
       </ul>
 </div>
       </div>

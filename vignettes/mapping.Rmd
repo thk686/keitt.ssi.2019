@@ -55,6 +55,7 @@ library(ggthemes) # extra plot styles
 library(proj4) # advanced map projections
 library(raster) # for raster data
 library(sf) # vector data
+library(RStoolbox) # fortify raster
 ```
 
 The ```p_load``` command will install packages if they are not present already. The SSI package depends on ```pacman``` so it should already be installed. The ```::``` syntax calls the function on the right-hand-side from the package given on the left-hand-side. This way, we do not have to load the ```pacman``` package itself.
@@ -171,8 +172,6 @@ This illustration shows the difference between a raster (pixel) "A" and a vector
 <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/e/e8/Bitmap_vs_vector.svg/508px-Bitmap_vs_vector.svg.png" alt="Figure" height="256" width="256">
 
 Here's an example of loading and ploting raster data from the ```raster``` package [vignette](https://cran.r-project.org/web/packages/raster/vignettes/Raster.pdf).
-
-Note that this example uses the function ```fortify.raster``` that is defined in this package. It is not generally available in ```ggplot2```.
 
 ```{r fig.width=6, fig.height=4}
 filename <- system.file("external/test.grd", package = "raster")
