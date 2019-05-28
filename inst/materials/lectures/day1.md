@@ -183,10 +183,10 @@ Adapted from [Create Maps With R Geospatial Classes and Graphics Tools](https://
 
 ```r
 nceas_dat <- "materials/lectures/example-data/NCEAS sample"
-states <- read_sf(system.file(nceas_dat, "western-states.shp", package = "ssi2018"))
-reservoirs <- read_sf(system.file(nceas_dat, "western-reservoirs.shp", package = "ssi2018"))
-rivers <- read_sf(system.file(nceas_dat, "western-rivers.shp", package = "ssi2018"))
-dams <- read_sf(system.file(nceas_dat, "western-dams.shp", package = "ssi2018"))
+states <- read_sf(system.file(nceas_dat, "western-states.shp", package = "keitt.ssi.2019"))
+reservoirs <- read_sf(system.file(nceas_dat, "western-reservoirs.shp", package = "keitt.ssi.2019"))
+rivers <- read_sf(system.file(nceas_dat, "western-rivers.shp", package = "keitt.ssi.2019"))
+dams <- read_sf(system.file(nceas_dat, "western-dams.shp", package = "keitt.ssi.2019"))
 st_crs(reservoirs) <- st_crs(states) # quick fix for missing CRS
 ```
 
@@ -1194,7 +1194,7 @@ print(sample(i))
 ```
 
 ```
-[1] 2 1 3
+[1] 3 2 1
 ```
 
 ```r
@@ -1203,9 +1203,9 @@ print(a[sample(i), sample(i)]) # row-column permutation
 
 ```
      [,1] [,2] [,3]
-[1,]    3    9    6
-[2,]    1    7    4
-[3,]    2    8    5
+[1,]    8    2    5
+[2,]    9    3    6
+[3,]    7    1    4
 ```
 
 RefresheR
@@ -1379,7 +1379,7 @@ print(c(g(2), f()(2))) # uses x created by f()
 ```
 
 ```
-[1]  12.63737 -17.04116
+[1] -3.346907 20.445370
 ```
 
 The factory function is just a convenient way to bind an anonymous environment to the returned closure. I use this all the time to speed up calculations.
@@ -1400,7 +1400,7 @@ print(row.sums)
 ```
 
 ```
-[1]  2.78191863  0.02129104  0.72254189  0.81510978 -1.50976840
+[1]  3.0500616  0.1592766 -2.7607980  2.7362020 -4.6470902
 ```
 
 RefresheR
@@ -1418,7 +1418,7 @@ print(row.sums)
 ```
 
 ```
-[1]  2.78191863  0.02129104  0.72254189  0.81510978 -1.50976840
+[1]  3.0500616  0.1592766 -2.7607980  2.7362020 -4.6470902
 ```
 
 - Note that variables are bound (copied to the function's environment) at the time of the function definition.
@@ -1665,18 +1665,18 @@ lm(formula = y ~ x)
 
 Residuals:
     Min      1Q  Median      3Q     Max 
--1.8697 -0.8305 -0.1027  0.6841  2.5602 
+-2.4034 -0.6134 -0.0821  0.7563  2.4656 
 
 Coefficients:
             Estimate Std. Error t value Pr(>|t|)    
-(Intercept)   1.0810     0.1031   10.48   <2e-16 ***
-x             2.1455     0.1061   20.22   <2e-16 ***
+(Intercept)  1.10024    0.09474   11.61   <2e-16 ***
+x            1.99788    0.09796   20.39   <2e-16 ***
 ---
 Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 
-Residual standard error: 1.019 on 98 degrees of freedom
-Multiple R-squared:  0.8066,	Adjusted R-squared:  0.8047 
-F-statistic: 408.8 on 1 and 98 DF,  p-value: < 2.2e-16
+Residual standard error: 0.9438 on 98 degrees of freedom
+Multiple R-squared:  0.8093,	Adjusted R-squared:  0.8074 
+F-statistic: 415.9 on 1 and 98 DF,  p-value: < 2.2e-16
 ```
 </small>
 
@@ -1737,8 +1737,8 @@ Analysis of Variance Table
 
 Response: y
           Df Sum Sq Mean Sq F value    Pr(>F)    
-x          1 424.24  424.24  408.78 < 2.2e-16 ***
-Residuals 98 101.70    1.04                      
+x          1 370.45  370.45  415.92 < 2.2e-16 ***
+Residuals 98  87.29    0.89                      
 ---
 Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 ```
@@ -1769,14 +1769,14 @@ str(mod1[1:6])
 
 ```
 List of 6
- $ coefficients : Named num [1:2] 1.08 2.15
+ $ coefficients : Named num [1:2] 1.1 2
   ..- attr(*, "names")= chr [1:2] "(Intercept)" "x"
- $ residuals    : Named num [1:100] -0.5887 0.9836 -0.0448 -0.8709 0.4453 ...
+ $ residuals    : Named num [1:100] 0.0799 -0.1732 -2.4034 -0.9406 -0.8275 ...
   ..- attr(*, "names")= chr [1:100] "1" "2" "3" "4" ...
- $ effects      : Named num [1:100] -14.039 -20.597 -0.118 -1.043 0.487 ...
+ $ effects      : Named num [1:100] -12.704 -19.247 -2.419 -0.936 -0.809 ...
   ..- attr(*, "names")= chr [1:100] "(Intercept)" "x" "" "" ...
  $ rank         : int 2
- $ fitted.values: Named num [1:100] 2.46 3.46 4.26 6.41 1.77 ...
+ $ fitted.values: Named num [1:100] 0.151 1.419 0.302 2.402 3.96 ...
   ..- attr(*, "names")= chr [1:100] "1" "2" "3" "4" ...
  $ assign       : int [1:2] 0 1
 ```
@@ -1832,15 +1832,15 @@ print(mod2)
 ```
 Linear mixed model fit by REML ['lmerMod']
 Formula: y ~ x + (1 | z)
-REML criterion at convergence: 316.6889
+REML criterion at convergence: 292.4321
 Random effects:
  Groups   Name        Std.Dev.
- z        (Intercept) 2.295   
- Residual             1.132   
+ z        (Intercept) 2.1677  
+ Residual             0.9985  
 Number of obs: 100, groups:  z, 2
 Fixed Effects:
 (Intercept)            x  
-    -0.4485       2.1025  
+    -0.4666       2.0447  
 ```
 
 RefresheR
@@ -1876,8 +1876,10 @@ ranef(mod2)
 ```
 $z
   (Intercept)
-0    1.619172
-1   -1.619172
+0    1.529555
+1   -1.529555
+
+with conditional variances for "z" 
 ```
 - Recall that `y` was constructed with `-3 * z`
 - Correctly estimates random effect
@@ -1900,7 +1902,7 @@ show(mod2@beta)  # show is S4 print
 ```
 
 ```
-[1] -0.4484536  2.1025154
+[1] -0.4665906  2.0447131
 ```
 Fixed effects stored in `beta`
 
@@ -1913,10 +1915,10 @@ head(mod2@frame, n = 3)  # the data
 ```
 
 ```
-           y         x z
-1 -0.1034333 0.8318085 1
-2  3.1476881 0.9128802 0
-3  1.5592438 0.6286287 0
+          y           x z
+1 -1.833552 -0.52892952 1
+2  4.635120  2.23648144 0
+3 -2.274458  0.01527822 1
 ```
 
 ```r
@@ -1924,10 +1926,10 @@ head(slot(mod2, 'frame'), n = 3)
 ```
 
 ```
-           y         x z
-1 -0.1034333 0.8318085 1
-2  3.1476881 0.9128802 0
-3  1.5592438 0.6286287 0
+          y           x z
+1 -1.833552 -0.52892952 1
+2  4.635120  2.23648144 0
+3 -2.274458  0.01527822 1
 ```
 - It is bad design to ever access slots directly
 - Better to treat slots as protected data
@@ -1977,13 +1979,13 @@ foreach(i = 1:3) %do% rnorm(1)
 
 ```
 [[1]]
-[1] -0.56033
+[1] -0.3347296
 
 [[2]]
-[1] 0.8289689
+[1] 0.131936
 
 [[3]]
-[1] 1.316551
+[1] 0.2147089
 ```
 
 The real action is in the `%do%` infix operator.
@@ -1999,7 +2001,7 @@ foreach(i = 1:3, .combine = c) %do% rnorm(1)
 ```
 
 ```
-[1] 0.1965292 1.8581845 0.8693290
+[1]  1.2642349  0.3642307 -0.1599080
 ```
 
 This is a form of map (the expression) and reduce (the .combine function)
@@ -2016,7 +2018,7 @@ system.time(f())
 
 ```
    user  system elapsed 
-  1.083   0.031   1.114 
+  1.140   0.037   1.178 
 ```
 
 About 1.5 seconds on my laptop
@@ -2034,7 +2036,7 @@ system.time(
 
 ```
    user  system elapsed 
-  4.700   0.042   4.743 
+  4.420   0.042   4.462 
 ```
 
 About 6.5 seconds on my laptop
@@ -2054,7 +2056,7 @@ system.time(
 
 ```
    user  system elapsed 
-  0.015   0.020   1.671 
+  0.014   0.014   0.999 
 ```
 
 About 2.5 seconds on my laptop. Here `%dopar%` automatically splits the computation across all of the available cores.

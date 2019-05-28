@@ -186,10 +186,10 @@ Adapted from [Create Maps With R Geospatial Classes and Graphics Tools](https://
 
 ```{r}
 nceas_dat <- "materials/lectures/example-data/NCEAS sample"
-states <- read_sf(system.file(nceas_dat, "western-states.shp", package = "ssi2018"))
-reservoirs <- read_sf(system.file(nceas_dat, "western-reservoirs.shp", package = "ssi2018"))
-rivers <- read_sf(system.file(nceas_dat, "western-rivers.shp", package = "ssi2018"))
-dams <- read_sf(system.file(nceas_dat, "western-dams.shp", package = "ssi2018"))
+states <- read_sf(system.file(nceas_dat, "western-states.shp", package = "keitt.ssi.2019"))
+reservoirs <- read_sf(system.file(nceas_dat, "western-reservoirs.shp", package = "keitt.ssi.2019"))
+rivers <- read_sf(system.file(nceas_dat, "western-rivers.shp", package = "keitt.ssi.2019"))
+dams <- read_sf(system.file(nceas_dat, "western-dams.shp", package = "keitt.ssi.2019"))
 st_crs(reservoirs) <- st_crs(states) # quick fix for missing CRS
 ```
 
