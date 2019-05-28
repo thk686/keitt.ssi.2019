@@ -1,0 +1,149 @@
+```{r include=F}
+#opts_chunk$set(warning=F, message=F)
+
+solutions=F
+
+```
+
+Load a few plot helpers.
+
+```{r}
+color.ramp <-function(palette="Spectral", reverse=TRUE, sample=FALSE)
+{
+  pacman::p_load(RColorBrewer)
+  n <- brewer.pal.info[palette,]$maxcolors
+  pal <- brewer.pal(n, palette)
+  if (reverse) pal <- rev(pal)
+  if (sample) pal <- sample(pal)
+  return(colorRampPalette(pal))
+}
+
+set.spplot.colors <- function(ncol = 100, palette = "Spectral", reverse = TRUE, sample = FALSE)
+{
+  pacman::p_load(lattice)
+  pal <- color.ramp(palette, reverse, sample)(ncol)
+  trellis.par.set(regions = list(col = pal))
+}
+```
+
+# Geospatial Data Analysis in `R`
+## Raster Data Sources
+
+```{r}
+pacman::p_load(raster)
+pacman::p_load(rasterVis)
+```
+
+### Raster Visualization
+```{r}
+r <- raster("ncrast/elev_lid792_1m.tif")
+```
+
+#### Visualizing Values
+```{r}
+contourplot(r)
+levelplot(r, col.regions=terrain.colors)
+```
+
+#### Visualizing How Values are Changing
+```{r}
+vectorplot(r, col.regions=terrain.colors)
+streamplot(r)
+```
+
+#### Interactive 3D Visualization
+Mouse wheel to zoom, click and drag to rotate. This code will not be run when generating the html. Try it in R.
+```{r eval=F}
+pacman::p_load("rasterVis")
+r <- raster("ncrast/elev_lid792_1m.tif")
+plot3D(r)
+```
+
+### Working With Raster Values
+
+#### Convert to Matrix
+```{r}
+m <- as.matrix(r)
+m[1:3, 1:3]         # first 3 rows and columns
+```
+
+#### Aggregate
+```{r}
+r.mean <- aggregate(r, fact=10, fun=mean)
+r.max <- aggregate(r, fact=10, fun=max)
+r.min <- aggregate(r, fact=10, fun=min)
+```
+
+Dimensions changed:
+```{r results='hold'}
+dim(r)
+dim(r.mean)
+```
+
+Spatial extent unchanged:
+```{r results='hold'}
+extent(r)
+extent(r.mean)
+```
+
+#### Disaggregate
+Either repeats values or linearly interpolates them.
+```{r}
+r.mean <- disaggregate(r.mean, fact=10)
+r.mean.interp <- disaggregate(r.max, fact=10, method='bilinear')
+```
+Raster layers must have identical spatial extent and resolution to be stacked.
+```{r}
+levelplot(stack(r, r.mean, r.mean.interp), col.regions=terrain.colors)
+```
+
+### Raster to Vector Conversion
+#### Raster to XYZ Points
+The Z coordinate is the raster value.
+```{r}
+pts <- rasterToPoints(r)
+head(pts)
+```
+
+#### Raster to `SpatialPoints`
+```{r}
+sp.pts <- rasterToPoints(r, spatial=T)
+summary(sp.pts)
+```
+
+#### Raster to `SpatialPolygons`
+The `raster` package provides `rasterToPolygons` but performance is unacceptable for large rasters. Use the command line utility `gdal_polygonize.py` instead. In the "tools" menu above in RStudio, you will see a "shell" option. You can use that to enter these commands. (Your directory probably already has these files, so you may not need to do this.)
+```
+cd Exercises
+gdal_polygonize.py ncrast/zipcodes.tif -f "ESRI Shapefile" extra zipcodes zipnum
+```
+Now read in the shapefile and convert the zipnum attribute to a factor:
+```{r}
+pacman::p_load(rgdal)
+zipcodes <- readOGR(dsn="extra", layer="zipcodes", verbose=F)
+zipcodes$zipnum <- factor(zipcodes$zipnum)
+spplot(zipcodes, col.regions=color.ramp("Set3")(nlevels(zipcodes$zipnum)))
+```
+
+#### Activity: Reproject a Raster
+Use the `projectRaster` function to reproject the *elev_state_500m.tif* elevation map to longitude/latitude coordinates. Call `projectRaster` with a raster object and a named crs string `crs=+proj=longlat`. Then usen `levelplot` to visualize the result.
+
+Functions: `raster`, `projectRaster`, `levelplot`
+
+```{r echo=solutions, fig.width=10}
+r <- raster("ncrast/elev_state_500m.tif")
+s <- projectRaster(r, crs="+proj=longlat")
+levelplot(s, col.regions=terrain.colors)
+```
+
+#### Activity: Calculate NDVI
+Use the near infrared (*lsat7_2002_40.tif*) and visible (*lsat7_2002_30.tif*) LSAT imagery to calculat NDVI. NDVI is defined as (NIR - VIS)/(NIR + VIS). Use `levelplot` to visualize the result.
+
+Functions: `raster`, `levelplot`, `rev`, `terrain.colors`
+
+```{r echo=solutions, fig.width=10}
+nir <- raster("ncrast/lsat7_2002_40.tif")
+vis <- raster("ncrast/lsat7_2002_30.tif")
+ndvi <- (nir - vis) / (nir + vis)
+levelplot(ndvi, col.regions=rev(terrain.colors(20)))
+```

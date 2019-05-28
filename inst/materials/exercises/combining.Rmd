@@ -1,0 +1,71 @@
+```{r include=F}
+knitr::opts_chunk$set(warning=F, message=F)
+
+# echo activity solutions?
+solutions=FALSE
+
+```
+
+# Geospatial Data Analysis in `R`
+
+Load some packages.
+
+```{r results="hide"}
+library(rgdal)
+library(raster)
+library(rgeos)
+```
+
+#### The `over` function
+
+The sp library has an `over` function, which can also be called using the infix operator `%over%`. The `over` function does a spatial join between sp objects. The first object (or lefthand side) determines the locations where data will be extraced from the second object. For example, if you have a points dataset and you want to know which polygon in a polygons dataset goes with each point, then you use the `over` command.
+
+```{r}
+busstops <- readOGR(dsn="ncshape", layer="busstopsall", verbose=F)
+censusblk <- readOGR(dsn="ncshape", layer="censusblk_swwake", verbose=F)
+join <- busstops %over% censusblk      # rows of censusblk matched to bus stops
+head(join[, 1:7])  # 'cat' is the bus stop id
+```
+
+#### Activity: Hospital Elevation
+Try joining the lakes layer (lhs) to the swwake census blocks layer (rhs). You will get a lot of NA values where there were not matches. You can filter these out.
+
+Functions: `readOGR`, `over`, `is.na`, `cbind`
+
+```{r echo=solutions}
+censusblk <- readOGR(dsn="ncshape", layer="censusblk_swwake", verbose=F)
+lakes <- readOGR(dsn="ncshape", layer="lakes", verbose=F)
+join <- lakes %over% censusblk
+join <- join[!is.na(join)]
+head(cbind(Lake = names(join), Block = join))
+```
+
+#### The `extract` function
+
+The function `extract` in the raster package will choose pixel values in a raster based on a the points in an SpatialPoints object. The first argument of extract is a raster object. The second argument can be a wide variety of objects specifying points: 2-column matrix, 2-column  data frame, a SpatialPoints object or an vector of indices. Methods are available for interpolating from neighboring cells and buffering the selection region. Here's an example. One niggling details is that you have to strip the Z-value from the coordinates of your SpatialPoints because extract expects only x, y values, not x, y, z.
+
+```{r}
+zipc <- raster("ncrast/zipcodes.tif"); plot(zipc)
+firest <- readOGR(dsn="ncshape", layer="firestations", verbose=F, pointDropZ = TRUE)
+plot(firest, pch = 19, add = TRUE)
+fszip <- extract(zipc, firest)
+res <- data.frame(Firestation = firest$LABEL, Zipcode = fszip)
+res <- res[is.finite(res[, 2]), ]  # Get rid of NA's where firestation was outside of any zipcode
+print(res)
+```
+
+#### Activity: Hospital Elevation
+Use the `hospitals` point layer and the `elev_state_500m` raster to `extract` the elevation of North Carolina hospitals. Open the `hospitals` layer with `pointDropZ=T` to drop Z coordinates.
+
+Functions: `raster`, `readOGR`, `extract`, `rgb`, `plot`
+
+```{r echo=solutions}
+elev.state <- raster("ncrast/elev_state_500m.tif"); plot(elev.state)
+hospitals <- readOGR(dsn="ncshape", layer="hospitals", verbose=F, pointDropZ=T)
+nc.state <- readOGR(dsn="ncshape", layer="nc_state", verbose=F); plot(nc.state, add = TRUE)
+hospitals <- extract(elev.state, hospitals, sp=T)
+pcol = rgb(0.75, 0.5, 1.0, 0.5)
+plot(hospitals, cex = hospitals$elev_state_500m / 500, col = pcol, pch = 19, add = TRUE)
+plot(hospitals, pch = 19, cex = 0.1, add = TRUE)
+```
+

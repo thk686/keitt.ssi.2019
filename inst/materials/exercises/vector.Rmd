@@ -1,0 +1,347 @@
+```{r include=F}
+#opts_chunk$set(warning=F, message=F)
+
+# echo activity solutions?
+solutions=F
+
+```
+
+# Geospatial Data Analysis in `R`
+## Vector Data Sources
+Vector data sources represent geographic features as geometric shapes. Different kinds of shapes are used to represent different kinds of features:
+
+* Points are used to represent features as a simple location such as an observation site.
+* Line segments are used to represent curvilinear features such as roads and rivers.
+* Polygons are used to represent regions on Earth's surface such as countries and lakes.
+
+In addition to geometry, shapes usually have a variety of associated data called *attributes*. For example a point representing a United States address would probably have street, city, state, and zip code attributes in addition to its geographic coordinates.
+
+### Vector File Formats
+#### Comma-separated Values
+Probably the most common vector format is text-based XYZ point coordinates. In this format each line corresponds to one point, usually with each coordinate separated by a comma. This format is called comma-separated values (CSV) or, more generally, delimited text.
+```
+x1,y1,z1
+x2,y2,z2
+x3,y3,z3
+```
+The Z coordinate is sometimes omitted, for example when points are identified only by longitude and latitude. Very often the Z coordinate is re-purposed to record information about the point, such as a measurement that occurred there.
+
+An advantage of this format is that it is human readable and highly portable. Virtually all computers and software can read and write it. It is also easily manipulated using UNIX shell utilities. A disadvantage is that it is inefficient for large data sets and can only represent point geometry. Another disadvantage is its very limited support for metadata, which is typically limited to column names.
+
+#### Shapefiles
+Another very common vector format is ESRI Shapefile. This open source format originated in the 1990s with ArcView GIS. Actually the term *shapefile* is a misnomer: a shapefile is a collection of several files:
+
+* .shp -- contains feature geometry
+* .shx -- look-up file to accelerate finding individual features
+* .dbf -- feature attribute database
+* .prj -- projection data (optional)
+
+Shapefiles are capable of storing points, lines, and polygons, and up to 255 attributes per feature. Attribute names are limited to 10 characters. Shapefiles have good support for metadata.
+
+Shapefiles are generally not human readable but they are portable and well supported by GIS software, making them a good choice for storing vector data. One limitation is that each shapefile can only contain one kind of geometry: points can't be stored with lines, for example, so you need separate files for each geometry type. In addition, line and polygons are internally stored as collections of points instead of mathematical curves (splines), which can result in large files.
+
+Lets first define some convenience functions for making color maps.
+```{r}
+color.ramp <-function(palette="Spectral", reverse=TRUE, sample=FALSE)
+{
+  pacman::p_load(RColorBrewer)
+  n <- brewer.pal.info[palette,]$maxcolors
+  pal <- brewer.pal(n, palette)
+  if (reverse) pal <- rev(pal)
+  if (sample) pal <- sample(pal)
+  return(colorRampPalette(pal))
+}
+
+set.spplot.colors <- function(ncol = 100, palette = "Spectral", reverse = TRUE, sample = FALSE)
+{
+  pacman::p_load(lattice)
+  pal <- color.ramp(palette, reverse, sample)(ncol)
+  trellis.par.set(regions = list(col = pal))
+}
+```
+
+### Loading Shapefiles in `R`
+Shapefiles are opened in `R` with the `rgdal` package.
+```{r}
+pacman::p_load(rgdal)
+```
+
+#### Data Sources and Layers
+`rgdal` routines for opening and inspecting shapefiles don't directly accept a shapefile path argument. Instead they accept a data source name (dsn) and layer name. The data source name is the directory containing the shapefile. The layer name is the name of the shapefile without the file extension (.shp).
+
+You can query a data source for a list of available layers with the `ogrListLayers` function.
+```{r echo=1}
+ogrListLayers(dsn="ncshape")
+layers <- ogrListLayers(dsn="ncshape")
+```
+
+#### Layer Details
+To obtain detailed information about a layer, call `ogrInfo` with the data source and layer name.
+```{r echo=1}
+ogrInfo(dsn="ncshape", layer="firestations")
+firestations.info <- ogrInfo("ncshape", "firestations")
+```
+
+The `firestations` layer contains locations and attributes of fire stations in Wake County, NC. The "Feature type" line indicates that this layer has point geometry. The "Driver" line shows that the layer contains `r firestations.info$nrows` points. The "Fields" table shows that each point has `r firestations.info$nitems` attributes.
+
+#### Opening Shapefiles
+Shapefiles are opened in `R` with `readOGR`.
+```{r}
+firestations <- readOGR(dsn="ncshape", layer="firestations", verbose=F)
+```
+
+The type of object returned by `readOGR` depends on the layer geometry. It returns a `SpatialPointsDataFrame` for point layers, a `SpatialLinesDataFrame` for line layers, and a `SpatialPolygonsDataFrame` for polygon layers. Since these are data frames we can use dollar sign notation to access feature attributes. For example, we can determine the number of fire stations in each Wake County city:
+```{r}
+stations <- table(firestations$CITY)
+print(stations)
+```
+
+A dotplot is an effective graphical representation.
+```{r}
+pacman::p_load(lattice)
+stations <- stations[order(stations)]
+dotplot(stations, col="red", xlab="Fire Stations", main="Fire Stations in Wake County Cities")
+```
+
+#### Activity: Wake County Schools
+In this activity we will plot the number of elementary schools, middle schools, and high schools in Wake County cities. Open the `schools_wake` layer in the `ncshape` data source and create a `table` of schools in cities. Coerce the table to a data frame with column names `city`, `level`, and `count`, and use `subset` to obtain those rows with nonzero `count` and `level` "E", "M", or "H". Create `dotplot`s and `barchart`s of the data, experimenting with conditioning and grouping. Which plots are most informative?
+
+Functions: `readOGR`, `as.data.frame`, `names`, `subset`, `dotplot`, `reorder`, `table`
+
+```{r echo=solutions, fig.width=10}
+schools.wake <- readOGR(dsn="ncshape", layer="schools_wake", verbose=F)
+schools.wake.df <- as.data.frame(table(schools.wake$ADDRCITY, schools.wake$GLEVEL))
+names(schools.wake.df) <- c("city", "level", "count")
+schools.wake.df <- subset(schools.wake.df, count > 0 & level %in% c("E","M","H"))
+dotplot(reorder(city, count) ~ count | level, data=schools.wake.df, col="purple", main="Wake County Schools", xlab="Schools")
+```
+
+### Plotting Vector Data
+#### Plotting Shapes
+The spatial data frames returned by `readOGR` define methods for plotting. We can `subset` the polygons in the `boundary_county` layer to plot an outline of Wake County:
+```{r}
+boundary.county <- readOGR("ncshape", "boundary_county", verbose=F)
+wake <- subset(boundary.county, NAME=="WAKE")
+plot(wake, lwd=1.5, col="gray99")
+```
+
+The `firestations` point layer can be added to the plot using the `points` function:
+```{r}
+plot(wake, lwd=1.5, col="gray99")
+points(firestations, col="red")
+```
+
+Similarly, the `roadsmajor` line layer can be added using the `lines` functions:
+```{r}
+plot(wake, lwd=1.5, col="gray99")
+points(firestations, col="red")
+roadsmajor <- readOGR(dsn="ncshape", layer="roadsmajor", verbose=F)
+lines(roadsmajor, col="gray45", lwd=1.5)
+```
+
+#### Activity: Basic Plotting
+Use the `nc_state`, `hospitals`, and `railroads` layers of the `ncshape` data source to create a map of North Carolina hospitals and railroads.
+
+Functions: `readOGR`, `plot`, `lines`, `points`
+
+```{r echo=solutions, fig.width=10}
+nc_state <- readOGR(dsn="ncshape", layer="nc_state", verbose=F)
+railroads <- readOGR(dsn="ncshape", layer="railroads", verbose=F)
+hospitals <- readOGR(dsn="ncshape", layer="hospitals", verbose=F)
+plot(nc_state, lwd=1.5, col="gray99")
+lines(railroads, lwd=1.5, col="gray45")
+points(hospitals, col="#0080ff")
+```
+
+#### Plotting Shapes with Attributes
+While some maps are designed only to display shape and location, others are designed to highlight a theme connected to a geographic area. Such maps are called *thematic maps*, and they can be created in `R` using the `spplot` function. Here we color Wake County zipcodes with a unique color for each city.
+```{r}
+zipcodes.wake <- readOGR(dsn="ncshape", layer="zipcodes_wake", verbose=F)
+zipcode.colors <- color.ramp("Set3")(nlevels(zipcodes.wake$NAME))
+spplot(zipcodes.wake, zcol="NAME", main="Wake County Zipcodes", col.regions=zipcode.colors)
+```
+
+### Map Projections
+A map projection is a planar representation of Earth's curved surface. While it is usually sufficient to treat Earth's surface as flat over small geographic areas, over large areas the distortions introduced by flattening a curved surface become significant. Projections distort areas, shapes, distances, directions, and other properties of Earth's surface. A map projection represents a particular trade-off among these distortions. Some preserve area at the expense of shape (*equal-area* projections), while others preserve shape at the expense of area (*conformal* projections). It is impossible to preserve both.
+
+For these reasons, there is no single best projection. A projection must be chosen to suit the particular application, so very often when combining geospatial data from different sources you will find that different projections were used. In this case it is necessary to transform one projection to another in a process called *reprojection*. Since vector data sources are based on mathematical objects, reprojection is straightforward.
+
+We can obtain shapefile projection details with the `proj4string` function:
+```{r fig.width=10}
+countries <- readOGR(dsn="extra", layer="ne_110m_admin_0_countries", verbose=F)
+proj4string(countries)
+set.spplot.colors(ncol=nlevels(countries$subregion), palette="Set3")
+spplot(countries, zcol="subregion", colorkey=F)
+```
+
+Reprojection is done with `spTransform`:
+```{r fig.width=10}
+countries <- spTransform(countries, CRS("+proj=moll"))
+spplot(countries, zcol="subregion", colorkey=F)
+```
+
+### Calculations on Vector Data
+One of the greatest advantages of vector data sources is their suitability for geometric operations. Here we will highlight several useful operations provided by the `rgeos` package. These operate on and return `Spatial` objects such as `SpatialPoints` and `SpatialPolygons`. While they accept the spatial data frames returned from `readOGR` as inputs, the attributes are discarded and only the geometries are returned.
+
+```{r}
+pacman::p_load(rgeos)
+```
+
+#### Union
+`rgeos` offers `gUnion` for merging intersecting geometries and `gUnaryUnion` for merging subgeometries. The `boundary.county` layer contains `r length(boundary.county)` polygons representing portions of `r nlevels(boundary.county$NAME)` counties. We can use `gUnaryUnion` to merge the polygons of individual counties, producing a `SpatialPolygons` object with one polygon per county.
+
+```{r fig.width=10}
+counties <- gUnaryUnion(boundary.county, boundary.county$NAME)
+county.colors <- color.ramp("Set3")(nlevels(boundary.county$NAME))
+plot(counties, col=county.colors, lwd=1.5)
+```
+
+#### Activity: Merge Counties into Regions
+In this activity we will group North Carolina counties longitudinally into four regions and merge each region into a single polygon. One approach is to use the `coordinates` function to get a vector of county centers. This vector of x coordinates can be converted to a vector of factor levels using `cut`. After a new `SpatialPolygonsDataFrame` is created from the factors, `gUnaryUnion` can merge the polygons of each region.
+
+Functions: `coordinates`, `cut`, `SpatialPolygonsDataFrame`, `data.frame`, `gUnaryUnion`, `plot`, `brewer.pal`
+
+```{r echo=solutions, fig.width=10}
+x <- coordinates(counties)[,1]
+regions <- cut(x, 4, labels=1:4, include.lowest=T)
+counties <- SpatialPolygonsDataFrame(counties, data.frame(region=regions), match.ID=F)
+counties.region <- gUnaryUnion(counties, counties$region)
+plot(counties.region, col=brewer.pal(4, "Set3"), lwd=1.5)
+```
+
+#### Centroid
+The `gCentroid` routine calculates the centroid of the given geometry. The default behavior is to calculate the centroid of the entire geometry, but by passing `byid=TRUE` we can calculate the centroid of individual features.
+```{r fig.width=10}
+county.centers <- gCentroid(counties, byid=T)
+plot(counties, col=county.colors, lwd=1.5)
+points(county.centers)
+```
+
+#### Buffer
+Often the space surrounding a feature is of as much interest as the feature itself, particularly when intersecting overlaying points and lines on another dataset. We can use the `gBuffer` function to expand a geometry to include the area within a specified width. As with `gCentroid`, the default behavior is to create a buffer around the entire geometry, but by passing `byid=TRUE` we can calculate a buffer for individual features.
+```{r fig.width=10}
+plot(nc_state, col="gray99", lwd=1.5)
+points(hospitals, pch=20, col="#0080ff")
+```
+Now use `gBuffer` to create a 10 mile buffer around each hospital:
+```{r echo=c(1,3), fig.width=10}
+hospitals.buffer <- gBuffer(hospitals, width=16000) # 16km is approx 10mi
+plot(nc_state, col="gray99", lwd=1.5)
+plot(hospitals.buffer, add=T)
+points(hospitals, pch=20, col="#0080ff")
+```
+
+#### Activity: Wake County Firestation Coverage
+In this activity we will find the proportion of Wake County within 5km of a firestation using `gBuffer`, `gDifference`, and `gArea`.
+
+Functions: `gBuffer`, `plot`, `points`, `gArea`, `gDifference`
+
+```{r echo=solutions}
+firestations.buffer <- gBuffer(firestations, width=5000)
+plot(wake, col="gray99", lwd=1.5)
+plot(firestations.buffer, add=T)
+points(firestations, pch=20, col="red")
+uncovered.area <- gArea(gDifference(wake, firestations.buffer))
+total.area <- gArea(wake)
+(total.area - uncovered.area) / (total.area)
+```
+
+#### Overlay
+The `over` function (and `%over%` operator) is used to extract attributes from one layer at locations defined by another. For example we can overlay the `hospitals` point layer with the `boundary_county` polygon layer to obtain the county name at each hospital location.
+```{r}
+hospitals.county <- table(hospitals %over% boundary.county["NAME"])
+print(hospitals.county)
+```
+Note the presence of zeros in the table: the overlay operation returned the `NAME` attribute of every county in the layer, including those without a hospital. We can use the table to create a thematic map.
+
+#### Activity: North Carolina Hospitals per County
+Compute and plot the number of hospitals in each county in North Carolina.
+
+Functions: `as.data.frame`, `names`, `c`, `factor`, `SpatialPolygonsDataFrame`, `color.ramp`, `nlevels`, `spplot`
+
+```{r echo=solutions, fig.width=10}
+hospitals.county.df <- as.data.frame(hospitals.county)
+names(hospitals.county.df) <- c("county","count")
+hospitals.county.df$count <- factor(hospitals.county.df$count)
+hospitals.county.spdf <- SpatialPolygonsDataFrame(counties, hospitals.county.df, match.ID=F)
+hospital.county.colors <- color.ramp("Blues")(nlevels(hospitals.county.df$count))
+spplot(hospitals.county.spdf, zcol="count", main="Hospitals per County", col.regions=hospital.county.colors, lwd=1.5)
+```
+
+### Spatial Interpolation
+Spatial interpolation is the process of using the values of a continuous variable (e.g. temperature) at a set of sample points to estimate the value at every other point in a region of interest. The basic idea is to use a weighted average of the values at observed (sampled) points to estimate the values at unobserved points. All spatial interpolation methods are based on Tobler's First Law of Geography:
+
+> Everything is related to everything else, but near things are more related than distant things.
+
+We will demonstrate spatial interpolation with the `gstat` package and Meuse data set.
+```{r}
+pacman::p_load(gstat)
+data(meuse)
+data(meuse.grid)
+data(meuse.riv)
+````
+
+The first step is converting the data set to `sp` classes.
+```{r}
+coordinates(meuse) <- ~x+y
+coordinates(meuse.grid) <- ~x+y
+meuse.river <- SpatialPolygons(list(Polygons(list(Polygon(meuse.riv)), "meuse.riv")))
+```
+
+We can visualize the data set as a whole.
+```{r fig.width=10}
+set.spplot.colors(palette="Spectral")
+spplot(meuse, c("zinc", "cadmium","lead","copper"), sp.layout=list(list("sp.polygons", meuse.river, fill="#0080ff")), col="gray35", colorkey=T, main="Heavy Metal Concentration in Top Soil (ppm)")
+```
+
+A bubble plot is an effective graphical representation for marked point data.
+```{r}
+bubble(meuse["zinc"], sp.layout=list(list("sp.polygons", meuse.river, fill="#0080ff")), col="gray35", fill=F, main="Zinc Concentration (ppm)")
+```
+
+#### Inverse Distance Weighting
+
+There are many methods of spatially interpolating point data. A simple algorithm is inverse distance weighting where each interpolated value is a weighted sum of the values of its neighbors. The weight used is the inverse of the distance to all or a subset of the original points. To obtain an inverse distance interpolation, we use the `krige` function from the `gstat` package, but without specifying a fitted model.
+
+
+```{r results='hide', fig.width=10}
+zinc.nvd <- krige(zinc ~ 1, meuse, meuse.grid)
+spplot(zinc.nvd, "var1.pred", colorkey=T, main="Inverse Distance Zinc Estimates (ppm)")
+```
+
+#### Variograms
+
+A variogram quantifies the autocorrelation of a set of points. The x-axis of a variogram is lag-distance between points. The y-axis gives the average squared difference between the z-values of points for a particular lag-distance. When the variogram is flat, there is no autocorrelation. When it rises steeply, there is autocorrelation. In geostatistics, we often fit a function to the variogram and then use that function to determine the contribution of neighbors to our interpolation. If the variogram flattens out at a very short distance, then we increase the contribution of nearby neighbors and the interpolation surface will be rough. If the variogram flattens out at a very long distance, we generate a more smooth interpolation of the point.
+
+
+```{r}
+zinc.ev <- variogram(log(zinc)~1, meuse)
+zinc.fitted <- fit.variogram(zinc.ev, model=vgm(1, "Sph", 900, 1))
+plot(zinc.ev, zinc.fitted)
+```
+
+#### Ordinary Kriging
+
+Ordinary Kriging assumes that the data are stationary, i.e., there is no spatial trend in the mean z-value. This is indicated below by the model formula only containing an intercept term (`~1`). A "Universal Kriging" model would contain formula terms related to the coordinates. This allows one to account for spatial trends in the mean value.
+
+```{r results='hide', fig.width=10}
+zinc.kriged <- krige(log(zinc)~1, meuse, meuse.grid, model=zinc.fitted)
+spplot(zinc.kriged, zcol="var1.pred", colorkey=T, main="Kriged Zinc Estimates (ppm)")
+```
+
+#### Activity: Interpolate Annual Precipitation
+Interpolate the annual rainfall data in `precip_30ynormals` layer. 
+
+Functions: `readOGR`, `spsample`, `krige`, `spplot`, `variogram`, `fit.variogram`, `plot`
+
+```{r echo=solutions, results='hide', fig.width=10}
+precip <- readOGR(dsn="ncshape", layer="precip_30ynormals", verbose=F)
+pts <- spsample(nc_state, 5000, "regular")
+precip.nvd <- krige(annual ~ 1, precip, pts)
+spplot(precip.nvd, "var1.pred", colorkey=T, main="Inverse Distance Annual Precipitation Estimates")
+precip.ev <- variogram(annual~1, precip)
+precip.fitted <- fit.variogram(precip.ev, model=vgm(1, "Sph", 50000, 1))
+plot(precip.ev, precip.fitted)
+precip.kriged <- krige(annual ~ 1, precip, pts, model=precip.fitted)
+spplot(precip.kriged, "var1.pred", colorkey=T, main="Kriged Annual Precipitation Estimates")
+```
