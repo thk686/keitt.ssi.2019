@@ -12,7 +12,7 @@ library(geosphere)
 Geospatial Data Analysis in R
 ========================================================
 author: Timothy H. Keitt
-date: May 12, 2014
+date: May 29, 2019
 width: 1440
 height: 900
 
@@ -863,7 +863,7 @@ Basic point processes
 
 ```{r fig.width = 12}
 beiK = Kest(bei, correction = "isotropic")
-invisible(plot(beiK))
+invisible(plot(beiK, lwd = 3))
 ```
 
 Working with vector data
@@ -881,7 +881,7 @@ Working with vector data
 Basic point processes
 
 ```{r fig.width = 12}
-invisible(plot(beiE))
+invisible(plot(beiE, lwd = 3))
 ```
 
 Working with vector data
@@ -955,8 +955,8 @@ Interpolation and Kriging
 
 ```{r fig.width = 12}
 grna =  rgb(0.1, 0.5, 0.1, 0.25)      # transparent green
-plot(ozone, pch = 21, cex = ozone$median / 10, bg = grna)
-points(ozone, pch = 19, col = "blue"); box()
+plot(st_coordinates(ozone), pch = 21, cex = ozone$median / 10, bg = grna)
+points(st_coordinates(ozone), pch = 19, col = "blue"); box()
 ```
 
 Working with vector data
@@ -965,7 +965,7 @@ Interpolation and Kriging
 
 ```{r fig.width = 12}
 library(fields)
-oz.tps = Tps(coordinates(ozone), ozone$median)
+oz.tps = Tps(st_coordinates(ozone), ozone$median)
 show(oz.tps)
 ```
 
@@ -994,7 +994,7 @@ Working with vector data
 Interpolation and Kriging
 
 ```{r}
-oz.k = Krig(coordinates(ozone), ozone$median, theta = 20)
+oz.k = Krig(st_coordinates(ozone), ozone$median, theta = 20)
 show(oz.k)
 ```
 
@@ -1004,7 +1004,7 @@ Interpolation and Kriging
 
 ```{r fig.width = 12}
 surface(oz.k)
-points(coordinates(ozone), pch = 19)
+points(st_coordinates(ozone), pch = 19)
 ```
 
 Working with vector data
@@ -1014,7 +1014,7 @@ Interpolation and Kriging
 ```{r fig.width = 12}
 se = predictSurfaceSE(oz.k)
 plot.surface(se)
-points(coordinates(ozone), pch = 19)
+points(st_coordinates(ozone), pch = 19)
 ```
 
 Working with vector data

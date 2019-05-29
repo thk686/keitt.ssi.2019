@@ -3,7 +3,7 @@
 Geospatial Data Analysis in R
 ========================================================
 author: Timothy H. Keitt
-date: May 12, 2014
+date: May 29, 2019
 width: 1440
 height: 900
 
@@ -176,7 +176,7 @@ vecdat = st_read("example-data/continents", "continent")
 ```
 
 ```
-Reading layer `continent' from data source `/Users/tkeitt/Dropbox/R/ssi2018/inst/materials/lectures/example-data/continents' using driver `ESRI Shapefile'
+Reading layer `continent' from data source `/Users/tkeitt/Dropbox/R/keitt.ssi.2019/inst/materials/lectures/example-data/continents' using driver `ESRI Shapefile'
 Simple feature collection with 8 features and 1 field
 geometry type:  MULTIPOLYGON
 dimension:      XY
@@ -249,7 +249,7 @@ st_write(vecdat, dest, "newlayername", driver = "ESRI Shapefile")
 ```
 
 ```
-Writing layer `newlayername' to data source `/private/var/folders/rd/vbxgtfr542l9w47nmfynknnh0000gn/T/RtmpF8Azzz' using driver `ESRI Shapefile'
+Writing layer `newlayername' to data source `/var/folders/rd/vbxgtfr542l9w47nmfynknnh0000gn/T//RtmpW6UJIJ' using driver `ESRI Shapefile'
 features:       8
 fields:         1
 geometry type:  Multi Polygon
@@ -260,8 +260,8 @@ dir(dest)
 ```
 
 ```
-[1] "file1615f6d59ea20" "newlayername.dbf"  "newlayername.prj" 
-[4] "newlayername.shp"  "newlayername.shx" 
+[1] "file6d5d6ec038b"  "newlayername.dbf" "newlayername.prj"
+[4] "newlayername.shp" "newlayername.shx"
 ```
 
 ```r
@@ -835,7 +835,7 @@ st_distance(p1, p2) # understands CRS
 ```
 
 ```
-Units: m
+Units: [m]
         [,1]
 [1,] 2731121
 ```
@@ -1176,7 +1176,7 @@ win = st_read("example-data/rainforest", "window")
 ```
 
 ```
-Reading layer `window' from data source `/Users/tkeitt/Dropbox/R/ssi2018/inst/materials/lectures/example-data/rainforest' using driver `ESRI Shapefile'
+Reading layer `window' from data source `/Users/tkeitt/Dropbox/R/keitt.ssi.2019/inst/materials/lectures/example-data/rainforest' using driver `ESRI Shapefile'
 Simple feature collection with 1 feature and 1 field
 geometry type:  POLYGON
 dimension:      XY
@@ -1321,7 +1321,7 @@ Basic point processes
 
 ```r
 beiK = Kest(bei, correction = "isotropic")
-invisible(plot(beiK))
+invisible(plot(beiK, lwd = 3))
 ```
 
 ![plot of chunk unnamed-chunk-36](day2-sf-figure/unnamed-chunk-36-1.png)
@@ -1350,7 +1350,7 @@ Basic point processes
 
 
 ```r
-invisible(plot(beiE))
+invisible(plot(beiE, lwd = 3))
 ```
 
 ![plot of chunk unnamed-chunk-38](day2-sf-figure/unnamed-chunk-38-1.png)
@@ -1447,7 +1447,7 @@ ozone = st_read("example-data/ozone.gml", "ozone")
 ```
 
 ```
-Reading layer `ozone' from data source `/Users/tkeitt/Dropbox/R/ssi2018/inst/materials/lectures/example-data/ozone.gml' using driver `GML'
+Reading layer `ozone' from data source `/Users/tkeitt/Dropbox/R/keitt.ssi.2019/inst/materials/lectures/example-data/ozone.gml' using driver `GML'
 Simple feature collection with 41 features and 2 fields
 geometry type:  POINT
 dimension:      XY
@@ -1479,8 +1479,8 @@ Interpolation and Kriging
 
 ```r
 grna =  rgb(0.1, 0.5, 0.1, 0.25)      # transparent green
-plot(ozone, pch = 21, cex = ozone$median / 10, bg = grna)
-points(ozone, pch = 19, col = "blue"); box()
+plot(st_coordinates(ozone), pch = 21, cex = ozone$median / 10, bg = grna)
+points(st_coordinates(ozone), pch = 19, col = "blue"); box()
 ```
 
 ![plot of chunk unnamed-chunk-43](day2-sf-figure/unnamed-chunk-43-1.png)
@@ -1490,17 +1490,131 @@ Working with vector data
 Interpolation and Kriging
 
 
-
-
-
-
-
-
-
-
-
+```r
+library(fields)
+oz.tps = Tps(st_coordinates(ozone), ozone$median)
+show(oz.tps)
+```
 
 ```
-Error in (function (classes, fdef, mtable)  : 
-  unable to find an inherited method for function 'coordinates' for signature '"sf"'
+Call:
+Tps(x = st_coordinates(ozone), Y = ozone$median)
+                                              
+ Number of Observations:                41    
+ Number of parameters in the null space 3     
+ Parameters for fixed spatial drift     3     
+ Model degrees of freedom:              8.2   
+ Residual degrees of freedom:           32.8  
+ GCV estimate for sigma:                13.13 
+ MLE for sigma:                         12.59 
+ MLE for rho:                           15970 
+ lambda                                 0.0099
+ User supplied rho                      NA    
+ User supplied sigma^2                  NA    
+Summary of estimates: 
+                lambda      trA      GCV     shat -lnLike Prof converge
+GCV        0.009932445 8.248602 215.7185 13.12704     155.5262        7
+GCV.model           NA       NA       NA       NA           NA       NA
+GCV.one    0.009932445 8.248602 215.7185 13.12704           NA        7
+RMSE                NA       NA       NA       NA           NA       NA
+pure error          NA       NA       NA       NA           NA       NA
+REML       0.011674462 7.795437 215.7731 13.21921     155.5171        4
 ```
+
+Working with vector data
+========================================================
+Interpolation and Kriging
+
+
+```r
+surface(oz.tps)
+```
+
+![plot of chunk unnamed-chunk-45](day2-sf-figure/unnamed-chunk-45-1.png)
+
+Working with vector data
+========================================================
+Interpolation and Kriging
+
+Regression Kriging model
+
+$$ Y_k = P(x_k) + Z(x_k) + \epsilon_k $$
+
+where $P(x)$ is a low-order polynomial trend surface and $Z(x)$ is a stationary Gaussian processes with spatial covariance $\Sigma(||x_i-x_j||)$. A thin-plate spline is a special case of Kriging -- the `fields` package function `Tps` actually calls `Krig` internally.
+
+Many more packages. See `gstat`, `geoR` and `geoRglm` among others.
+
+Working with vector data
+========================================================
+Interpolation and Kriging
+
+
+```r
+oz.k = Krig(st_coordinates(ozone), ozone$median, theta = 20)
+show(oz.k)
+```
+
+```
+Call:
+Krig(x = st_coordinates(ozone), Y = ozone$median, theta = 20)
+                                             
+ Number of Observations:                41   
+ Number of parameters in the null space 3    
+ Parameters for fixed spatial drift     3    
+ Model degrees of freedom:              14.1 
+ Residual degrees of freedom:           26.9 
+ GCV estimate for sigma:                11.65
+ MLE for sigma:                         11.21
+ MLE for rho:                           2825 
+ lambda                                 0.045
+ User supplied rho                      NA   
+ User supplied sigma^2                  NA   
+Summary of estimates: 
+               lambda      trA      GCV     shat -lnLike Prof converge
+GCV        0.04179902 14.45564 206.5001 11.56257     155.1283        6
+GCV.model          NA       NA       NA       NA           NA       NA
+GCV.one    0.04179902 14.45564 206.5001 11.56257           NA        6
+RMSE               NA       NA       NA       NA           NA       NA
+pure error         NA       NA       NA       NA           NA       NA
+REML       0.04452758 14.06186 206.5179 11.64852     155.1268        3
+```
+
+Working with vector data
+========================================================
+Interpolation and Kriging
+
+
+```r
+surface(oz.k)
+points(st_coordinates(ozone), pch = 19)
+```
+
+![plot of chunk unnamed-chunk-47](day2-sf-figure/unnamed-chunk-47-1.png)
+
+Working with vector data
+========================================================
+Interpolation and Kriging
+
+
+```r
+se = predictSurfaceSE(oz.k)
+plot.surface(se)
+points(st_coordinates(ozone), pch = 19)
+```
+
+![plot of chunk unnamed-chunk-48](day2-sf-figure/unnamed-chunk-48-1.png)
+
+Working with vector data
+========================================================
+type: sub-section
+- Simple features
+- The `rgdal` package
+- Vector data IO
+- `sp` classes
+- Creating vector data
+- Plotting vector data
+- Reprojecting data
+- Geometry operators
+- Geometry operators
+- Basic point processes
+- Interpolation and Kriging
