@@ -40,54 +40,34 @@ Shapefiles are capable of storing points, lines, and polygons, and up to 255 att
 
 Shapefiles are generally not human readable but they are portable and well supported by GIS software, making them a good choice for storing vector data. One limitation is that each shapefile can only contain one kind of geometry: points can't be stored with lines, for example, so you need separate files for each geometry type. In addition, line and polygons are internally stored as collections of points instead of mathematical curves (splines), which can result in large files.
 
-Lets first define some convenience functions for making color maps.
-```{r}
-color.ramp <-function(palette="Spectral", reverse=TRUE, sample=FALSE)
-{
-  pacman::p_load(RColorBrewer)
-  n <- brewer.pal.info[palette,]$maxcolors
-  pal <- brewer.pal(n, palette)
-  if (reverse) pal <- rev(pal)
-  if (sample) pal <- sample(pal)
-  return(colorRampPalette(pal))
-}
-
-set.spplot.colors <- function(ncol = 100, palette = "Spectral", reverse = TRUE, sample = FALSE)
-{
-  pacman::p_load(lattice)
-  pal <- color.ramp(palette, reverse, sample)(ncol)
-  trellis.par.set(regions = list(col = pal))
-}
-```
-
 ### Loading Shapefiles in `R`
 Shapefiles are opened in `R` with the `rgdal` package.
 ```{r}
-pacman::p_load(rgdal)
-pacman::p_load(sf)
-pacman::p_load(tidyverse)
+library(rgdal)
+library(sf)
+library(tidyverse)
 ```
 
 #### Data Sources and Layers
 `sf` routines for opening and inspecting shapefiles don't directly accept a shapefile path argument. Instead they accept a data source name (dsn) and layer name. The data source name is the directory containing the shapefile. The layer name is the name of the shapefile without the file extension (.shp).
 
-You can query a data source for a list of available layers with the `ogrListLayers` function.
+You can query a data source for a list of available layers with the `st_layers` function.
 ```{r echo=1}
-ogrListLayers(dsn="ncshape")
-layers <- ogrListLayers(dsn="ncshape")
+st_layers(dsn="ncshape")
+layers <- st_layers(dsn="ncshape")
 ```
 
 #### Layer Details
-To obtain detailed information about a layer, call `ogrInfo` with the data source and layer name.
+To obtain detailed information about a layer, call `ogrInfo` from `rgdal` with the data source and layer name.
 ```{r echo=1}
-ogrInfo(dsn="ncshape", layer="firestations")
+ogrInfo(dsn = "ncshape", layer = "firestations")
 firestations.info <- ogrInfo("ncshape", "firestations")
 ```
 
 The `firestations` layer contains locations and attributes of fire stations in Wake County, NC. The "Feature type" line indicates that this layer has point geometry. The "Driver" line shows that the layer contains `r firestations.info$nrows` points. The "Fields" table shows that each point has `r firestations.info$nitems` attributes.
 
 #### Opening Shapefiles
-Shapefiles are opened in `R` with `readOGR`.
+Shapefiles are opened in `R` with `st_read`.
 ```{r}
 firestations <- st_read(dsn = "ncshape", layer = "firestations")
 ```
@@ -121,47 +101,48 @@ schools.wake %>%
 
 ### Plotting Vector Data
 #### Plotting Shapes
-The spatial data frames returned by `readOGR` define methods for plotting. We can `subset` the polygons in the `boundary_county` layer to plot an outline of Wake County:
+The spatial data frames returned by `st_read` define methods for ggplot. We can `subset` the polygons in the `boundary_county` layer to plot an outline of Wake County:
 ```{r}
-boundary.county <- readOGR("ncshape", "boundary_county", verbose=F)
+boundary.county <- st_read("ncshape", "boundary_county", quiet = TRUE)
 wake <- subset(boundary.county, NAME=="WAKE")
-plot(wake, lwd=1.5, col="gray99")
+p1 <- ggplot(wake) + geom_sf() + theme_bw()
+print(p1)
 ```
 
-The `firestations` point layer can be added to the plot using the `points` function:
+The `firestations` point layer can be added to the plot by simply appending a new layer and printing.
 ```{r}
-plot(wake, lwd=1.5, col="gray99")
-points(firestations, col="red")
+p1 <- p1 + geom_sf(data = firestations)
+print(p1)
 ```
 
-Similarly, the `roadsmajor` line layer can be added using the `lines` functions:
+Similarly, the `roadsmajor` line layer can be added by appending a new ggplot layer:
 ```{r}
-plot(wake, lwd=1.5, col="gray99")
-points(firestations, col="red")
-roadsmajor <- readOGR(dsn="ncshape", layer="roadsmajor", verbose=F)
-lines(roadsmajor, col="gray45", lwd=1.5)
+roadsmajor <- st_read("ncshape", "roadsmajor", quiet = TRUE)
+p1 <- p1 + geom_sf(data = roadsmajor)
+print(p1)
 ```
 
 #### Activity: Basic Plotting
-Use the `nc_state`, `hospitals`, and `railroads` layers of the `ncshape` data source to create a map of North Carolina hospitals and railroads.
+Use the `nc_state`, `hospitals`, and `railroads` layers of the `ncshape` data source to create a map of North Carolina hospitals and railroads. Note that there are times when `geom_sf` is *very* slow. I have filled a bug report. It may take 5 minutes or more to actually draw the plot.
 
-Functions: `readOGR`, `plot`, `lines`, `points`
+Functions: `st_read`, `ggplot`, `geom_sf`
 
 ```{r echo=solutions, fig.width=10}
-nc_state <- readOGR(dsn="ncshape", layer="nc_state", verbose=F)
-railroads <- readOGR(dsn="ncshape", layer="railroads", verbose=F)
-hospitals <- readOGR(dsn="ncshape", layer="hospitals", verbose=F)
-plot(nc_state, lwd=1.5, col="gray99")
-lines(railroads, lwd=1.5, col="gray45")
-points(hospitals, col="#0080ff")
+nc_state <- st_read(dsn = "ncshape", layer = "nc_state", quiet = T)
+railroads <- st_read(dsn = "ncshape", layer = "railroads", quiet = T)
+hospitals <- st_read(dsn = "ncshape", layer = "hospitals", quiet = T)
+ggplot(nc_state) +
+  geom_sf() +
+  geom_sf(data = railroads) +
+  geom_sf(data = hospitals)
 ```
 
 #### Plotting Shapes with Attributes
-While some maps are designed only to display shape and location, others are designed to highlight a theme connected to a geographic area. Such maps are called *thematic maps*, and they can be created in `R` using the `spplot` function. Here we color Wake County zipcodes with a unique color for each city.
+While some maps are designed only to display shape and location, others are designed to highlight a theme connected to a geographic area. Such maps are called *thematic maps*, and they can be plotted in `R` using  `ggplot`. Here we color Wake County zipcodes with a unique color for each city.
 ```{r}
-zipcodes.wake <- readOGR(dsn="ncshape", layer="zipcodes_wake", verbose=F)
-zipcode.colors <- color.ramp("Set3")(nlevels(zipcodes.wake$NAME))
-spplot(zipcodes.wake, zcol="NAME", main="Wake County Zipcodes", col.regions=zipcode.colors)
+zipcodes.wake <- st_read(dsn = "ncshape", layer = "zipcodes_wake", quiet = T)
+ggplot(zipcodes.wake) +
+  geom_sf(aes(fill = NAME))
 ```
 
 ### Map Projections
@@ -169,34 +150,29 @@ A map projection is a planar representation of Earth's curved surface. While it 
 
 For these reasons, there is no single best projection. A projection must be chosen to suit the particular application, so very often when combining geospatial data from different sources you will find that different projections were used. In this case it is necessary to transform one projection to another in a process called *reprojection*. Since vector data sources are based on mathematical objects, reprojection is straightforward.
 
-We can obtain shapefile projection details with the `proj4string` function:
+We can obtain shapefile projection details with the `st_crs` function:
 ```{r fig.width=10}
-countries <- readOGR(dsn="extra", layer="ne_110m_admin_0_countries", verbose=F)
-proj4string(countries)
-set.spplot.colors(ncol=nlevels(countries$subregion), palette="Set3")
-spplot(countries, zcol="subregion", colorkey=F)
+countries <- st_read(dsn = "extra", layer = "ne_110m_admin_0_countries", quiet = T)
+st_crs(countries)
+ggplot(countries) +
+  geom_sf(aes(fill = subregion))
 ```
 
-Reprojection is done with `spTransform`:
+Reprojection is done with `st_transform`:
 ```{r fig.width=10}
-countries <- spTransform(countries, CRS("+proj=moll"))
-spplot(countries, zcol="subregion", colorkey=F)
+countries <- st_transform(countries, st_crs("+proj=moll"))
+ggplot(countries) +
+  geom_sf(aes(fill = subregion))
 ```
 
 ### Calculations on Vector Data
-One of the greatest advantages of vector data sources is their suitability for geometric operations. Here we will highlight several useful operations provided by the `rgeos` package. These operate on and return `Spatial` objects such as `SpatialPoints` and `SpatialPolygons`. While they accept the spatial data frames returned from `readOGR` as inputs, the attributes are discarded and only the geometries are returned.
-
-```{r}
-pacman::p_load(rgeos)
-```
+One of the greatest advantages of vector data sources is their suitability for geometric operations. Here we will highlight several useful operations provided by the `sf` package. These operate on and return `sf` or `sfc` objects. While they accept the spatial data frames returned from `st_read` as inputs, the attributes are discarded and only the geometries are returned.
 
 #### Union
-`rgeos` offers `gUnion` for merging intersecting geometries and `gUnaryUnion` for merging subgeometries. The `boundary.county` layer contains `r length(boundary.county)` polygons representing portions of `r nlevels(boundary.county$NAME)` counties. We can use `gUnaryUnion` to merge the polygons of individual counties, producing a `SpatialPolygons` object with one polygon per county.
+`sf` offers `st_union` for merging intersecting geometries and `gUnaryUnion` for merging subgeometries. The `boundary.county` layer contains `r length(boundary.county)` polygons representing portions of `r nlevels(boundary.county$NAME)` counties. We can use `gUnaryUnion` to merge the polygons of individual counties, producing a `SpatialPolygons` object with one polygon per county.
 
 ```{r fig.width=10}
-counties <- gUnaryUnion(boundary.county, boundary.county$NAME)
-county.colors <- color.ramp("Set3")(nlevels(boundary.county$NAME))
-plot(counties, col=county.colors, lwd=1.5)
+counties <- st_union(boundary.county, boundary.county$NAME)
 ```
 
 #### Activity: Merge Counties into Regions
@@ -278,7 +254,7 @@ Spatial interpolation is the process of using the values of a continuous variabl
 
 We will demonstrate spatial interpolation with the `gstat` package and Meuse data set.
 ```{r}
-pacman::p_load(gstat)
+library(gstat)
 data(meuse)
 data(meuse.grid)
 data(meuse.riv)

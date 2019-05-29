@@ -42,7 +42,9 @@ Imports:
     RStoolbox,
     ggthemes,
     nycflights13,
-    mapproj
+    mapproj,
+    tidyverse,
+    gstat
 Suggests: 
     knitr,
     rmarkdown,
