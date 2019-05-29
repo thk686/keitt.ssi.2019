@@ -7,3 +7,5 @@ Meta
 .Rhistory
 *_files
 .DS_Store
+*_cache
+*_figure
