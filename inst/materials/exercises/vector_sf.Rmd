@@ -169,23 +169,29 @@ ggplot(countries) +
 One of the greatest advantages of vector data sources is their suitability for geometric operations. Here we will highlight several useful operations provided by the `sf` package. These operate on and return `sf` or `sfc` objects. While they accept the spatial data frames returned from `st_read` as inputs, the attributes are discarded and only the geometries are returned.
 
 #### Union
-`sf` offers `st_union` for merging intersecting geometries and `gUnaryUnion` for merging subgeometries. The `boundary.county` layer contains `r length(boundary.county)` polygons representing portions of `r nlevels(boundary.county$NAME)` counties. We can use `gUnaryUnion` to merge the polygons of individual counties, producing a `SpatialPolygons` object with one polygon per county.
+`sf` offers `st_union` for merging intersecting geometries. The `boundary.county` layer contains `r nrow(boundary.county)` polygons representing portions of `r nlevels(boundary.county$NAME)` counties. We can use `st_union` in combination with dplyr (`filter`, `group_by`, `summarize`) to merge the polygons of individual counties, producing a `sf` object with one polygon per county.
 
 ```{r fig.width=10}
-counties <- st_union(boundary.county, boundary.county$NAME)
+counties <- boundary.county %>%
+  filter(!is.na(NAME)) %>%
+  group_by(NAME) %>%
+  summarize(geometry = st_union(geometry))
+ggplot(counties) + geom_sf(aes(fill = NAME))
 ```
 
 #### Activity: Merge Counties into Regions
-In this activity we will group North Carolina counties longitudinally into four regions and merge each region into a single polygon. One approach is to use the `coordinates` function to get a vector of county centers. This vector of x coordinates can be converted to a vector of factor levels using `cut`. After a new `SpatialPolygonsDataFrame` is created from the factors, `gUnaryUnion` can merge the polygons of each region.
+In this activity we will group North Carolina counties longitudinally into four regions and merge each region into a single polygon. One approach is to use the `st_coordinates` function to get a vector of county centers. This vector of x coordinates can be converted to a vector of factor levels using `cut`. After a new `sf` is created from the factors, `st_union` can merge the polygons of each region.
 
-Functions: `coordinates`, `cut`, `SpatialPolygonsDataFrame`, `data.frame`, `gUnaryUnion`, `plot`, `brewer.pal`
+Functions: `st_centroid`, `st_coordinates`, `cut`, `group_by`, `summarize`, `st_union`
 
 ```{r echo=solutions, fig.width=10}
-x <- coordinates(counties)[,1]
-regions <- cut(x, 4, labels=1:4, include.lowest=T)
-counties <- SpatialPolygonsDataFrame(counties, data.frame(region=regions), match.ID=F)
-counties.region <- gUnaryUnion(counties, counties$region)
-plot(counties.region, col=brewer.pal(4, "Set3"), lwd=1.5)
+x <- st_coordinates(st_centroid(counties))
+regions <- cut(x[,1], 4, labels=1:4, include.lowest=T)
+counties$region <- regions
+counties.region <- counties %>%
+  group_by(region) %>%
+  summarize(geometry = st_union(geometry))
+ggplot(counties.region) + geom_sf(aes(fill = region))
 ```
 
 #### Centroid

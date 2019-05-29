@@ -44,7 +44,7 @@ Lets first define some convenience functions for making color maps.
 ```{r}
 color.ramp <-function(palette="Spectral", reverse=TRUE, sample=FALSE)
 {
-  pacman::p_load(RColorBrewer)
+  library(RColorBrewer)
   n <- brewer.pal.info[palette,]$maxcolors
   pal <- brewer.pal(n, palette)
   if (reverse) pal <- rev(pal)
@@ -54,7 +54,7 @@ color.ramp <-function(palette="Spectral", reverse=TRUE, sample=FALSE)
 
 set.spplot.colors <- function(ncol = 100, palette = "Spectral", reverse = TRUE, sample = FALSE)
 {
-  pacman::p_load(lattice)
+  library(lattice)
   pal <- color.ramp(palette, reverse, sample)(ncol)
   trellis.par.set(regions = list(col = pal))
 }
@@ -63,7 +63,7 @@ set.spplot.colors <- function(ncol = 100, palette = "Spectral", reverse = TRUE, 
 ### Loading Shapefiles in `R`
 Shapefiles are opened in `R` with the `rgdal` package.
 ```{r}
-pacman::p_load(rgdal)
+library(rgdal)
 ```
 
 #### Data Sources and Layers
@@ -98,7 +98,7 @@ print(stations)
 
 A dotplot is an effective graphical representation.
 ```{r}
-pacman::p_load(lattice)
+library(lattice)
 stations <- stations[order(stations)]
 dotplot(stations, col="red", xlab="Fire Stations", main="Fire Stations in Wake County Cities")
 ```
@@ -184,7 +184,7 @@ spplot(countries, zcol="subregion", colorkey=F)
 One of the greatest advantages of vector data sources is their suitability for geometric operations. Here we will highlight several useful operations provided by the `rgeos` package. These operate on and return `Spatial` objects such as `SpatialPoints` and `SpatialPolygons`. While they accept the spatial data frames returned from `readOGR` as inputs, the attributes are discarded and only the geometries are returned.
 
 ```{r}
-pacman::p_load(rgeos)
+library(rgeos)
 ```
 
 #### Union
@@ -275,7 +275,7 @@ Spatial interpolation is the process of using the values of a continuous variabl
 
 We will demonstrate spatial interpolation with the `gstat` package and Meuse data set.
 ```{r}
-pacman::p_load(gstat)
+library(gstat)
 data(meuse)
 data(meuse.grid)
 data(meuse.riv)
