@@ -1,0 +1,241 @@
+---
+title: 'Geospatial Data Analysis in R: Mapping'
+author: "Timothy H. Keitt, University of Texas at Austin"
+date: "May 21, 2017"
+output:
+  html_document: default
+  html_notebook: default
+---
+
+***
+
+**Note**
+
+In this class, we will use [R Notebooks](http://rmarkdown.rstudio.com/r_notebooks.html) to intermix code with our documents. The document part of an R Notebook uses the [R Markdown](http://rmarkdown.rstudio.com/index.html) formatting convention. You can find cheat-sheets [here](http://rmarkdown.rstudio.com/lesson-15.html).
+
+Generally, your workflow will look like:
+
+1. Create an RStudio project. It will ask you for a directory where you want to keep your work. I suggest you put this on a cloud-synced folder using a service like [Dropbox](http://www.dropbox.com/) or make regular backups. If you do use cloud storage, rendering notebooks will generate a lot of synchronization events when doing analysis. I find this not too cumbersome with Dropbox, but services like [Box](http://www.box.com/) perform very badly in this case. You might need to pause synchronization or attempt to lower the run priority of the synchronization daemon. You can also enable version control on your project, which will allow you to do point-in-time recovery of earlier versions of your code and synchronize your repository with a remote service like [GitHub](http://www.github.com/). RStudio has a nice wrapper for using [git](http://www.git-scm.com). You might have a look [here](http://r-bio.github.io/intro-git-rstudio/).
+
+1. Create a new workbook by going to `File > New File > R Notebook`. It will be created with some example markup for you to study.
+
+1. Edit the bits at the top between the `---` statements to reflect the title, etc. This header section is formatted in [YAML](http://yaml.org) (some more information is [here](http://rmarkdown.rstudio.com/html_document_format.html).)
+
+1. You may want to enable chunk caching as described [here](http://rmarkdown.rstudio.com/authoring_rcodechunks.html). This will avoid re-running code every time, but can lead to code that does not update. You can clear the cache manually in that case.
+
+1. Write a bit of markdown text to describe what you are doing.
+
+1. Create your first R code block. You do this by typing <pre><code>```{r}</p>Your code</p>```</code></pre> (those are back-ticks). The `r` designates R as the language. You can use other languages like `python` as well!
+
+1. When your notebook is finished, optionally commit your changes and push to the cloud.
+
+***
+
+## Basic Mapping in R
+
+R can make lovely maps with a bit of patience and tweaking. There are huge range of options for reading, writing and plotting geospatial data in R. You can find a summary of many packages in the [spatial task-view](https://cran.r-project.org/web/views/Spatial.html) on [CRAN](http://cran.r-project.org/).
+
+***
+
+**Note**
+
+First we need to load some extensions or "packages" into R. I have started using the ```p_load``` function from the ```pacman``` package because it will automatically install the package if it is missing. But first you need to install the ```packman``` package. You can do this by going to ```Tools > Install Packages...``` and then entering ```pacman``` in the RStudio menus. If you have a better/newer way to do this, let me know! Note than when I call the ```p_load``` function, I preface it with the ```pacman::``` namespace designation. This calls the function without loading the package.
+
+***
+
+```{r setup}
+tryCatch(library(pacman), error = function(...)
+{
+  install.packages("pacman")  
+})
+pacman::p_load(tidyverse) # An increadibly useful array of packages that you will probably always want to use
+pacman::p_load(rgeos)     # GIS library
+pacman::p_load(maps)      # An oldie-but-goodie, the maps package contains some mapping data we can use
+pacman::p_load(mapproj)   # Allows map reprojections
+pacman::p_load(maptools)  # Another package that contains map data and other utilities
+pacman::p_load(broom)     # Utilities for tidying data
+pacman::p_load(sf)        # The simple features library
+pacman::p_load(ggmap)     # Really nice package for mapping
+gpclibPermit()            # Very strange handling of licensing issue
+```
+
+***
+
+**Note**
+
+R has extensive, built-in documentation. You can go to the ```Help``` tab in the lower right panel of RStudio to search and read help. In the console, ```??<topic>``` will search for topics, include similar sounding topics. ```?<topic>``` will search for a specific help page. I often use ```<topic> site:r-project.org``` in [Google](http://www.google.com/) as well.
+
+***
+
+The ```tidyverse``` collection include the plotting package [ggplot2](http://ggplot2.org/), which has some basic facilities for mapping data. First we will get some outline data of world continents and look at the structure of the object. To learn more about the ```tidyverse```, visit the [R for Data Science book](http://r4ds.had.co.nz/).
+
+```{r fig.width = 6, fig.height = 6, fig.align = 'center'}
+world = map_data('world') # this ggplot2 function gets data from the maps package
+str(world)                # the str function dumps the internals of an R object
+```
+
+The data are stored in a table format called a ```data.frame```. Data frames are the fundamental tabular type on which most of R analytics rests. This one has six columns and nearly 100,000 rows. Each row in this case is a latitude and longitude with some ancillary information indicating which polygon each point belongs to. Ggplot2 uses this information to render the polygons.
+
+***
+
+**Note**
+
+Ggplot2 works by constructing a pipeline. Each subsequent command either adds a layer of output to the plot or modifies existing layers. Every pipeline starts with the constructor ```ggplot``` and then adds items using ```+```. Somewhere, the aesthetics of the plot must be specified. You use the ```aes``` command for that. Generally, you will need at least ```aes(x = <x-var>, y = <y-var>)``` to make a plot.
+
+***
+
+```{r fig.width = 6, fig.height = 6, fig.align = 'center'}
+ggplot(world) +  # create a ggplot2 object; the + operator appends following objects to make the full plot
+  geom_polygon(aes(x = long, y = lat, group = group)) + # this tells ggplot to make polygons 
+  coord_map() # coord_map sets up the axes to be a map plot
+```
+
+There are a couple of problems with this map. First, it is clear that there are polygons that cross $\pm$ 180 degrees longitude and that is causing the drawing routine to make a streak across the top. This is a common problem when working with global polygons using a Cartesian drawing system. If you see this, you will need to change the data set or the rendering software. The second problem is that the default projection is Mercator, which distorts high- and low- latitude regions. Lets redraw using a good global projection, the moleweide project. Ggplot2 knows how to call the mapproj package to reproject the coordinates.
+
+```{r fig.width = 6, fig.height = 6, fig.align = 'center'}
+ggplot(world, aes(x = long, y = lat, )) + 
+  geom_polygon(aes(group = group, fill = group)) +   
+  coord_map("mollweide") +   # reproject    
+  theme_minimal() +                # ggplot uses themes to control output
+  guides(fill = FALSE)     # This is actually quite important
+```
+
+Here we added some color by specifying the ```fill``` attribute to ```geom_polygon``` and used the group factor to choose the colors. The default color map is not too keen, but we can fix that. The best colors come from the [RColorBrewer package](https://cran.r-project.org/package=RColorBrewer) and ggplot2 knows how to use it.
+
+```{r}
+data(wrld_simpl)  # from the maptools package
+w = tidy(wrld_simpl) # make this something that ggplot2 can work with
+str(w)
+```
+
+The ```tidy``` command converted the map data to a data frame and added an indicator ```group``` to designate the polygons. There is also information about whether a given polygon is an outline or a hole. Holes are usually drawn empty with the background color showing through. Of course, one can have holes within holes, as would happen with an island in a lake in a continent. Most GIS will try to account for this hierarchy, but not all system do it or do it correctly.
+
+```{r fig.width = 6, fig.height = 6, fig.align = 'center'}
+ggplot(w, aes(x = long, y = lat)) +
+  geom_polygon(aes(fill = group)) +
+  coord_map("vandergrinten") +
+  guides(fill = FALSE) +
+  theme_minimal() +
+  ylim(-55, 85)            # limit latitude a bit
+```
+
+The default colors are pretty ugly. For better colors, we can convert the fill to a number and use the ```scale_fill_distiller``` command. We will also use the ```sample``` command to randomize the colors each time. The ```sample``` function will randomly permute the input vector, e.g., ```sample(1:5) == c(5, 1, 2, 4, 3)```. The ```rgb``` command builds a color with different red, green and blue intensities. The fourth argument to ```rgb``` sets transparency.
+
+```{r fig.width = 6, fig.height = 6, fig.align = 'center'}
+ggplot(w, aes(x = long, y = lat, group = group)) +
+  geom_polygon(aes(fill = sample(as.integer(group))),
+               color = rgb(1, 1, 1, 0.1)) +            # color sets outlines
+  scale_fill_distiller(palette = "Set1") +             # RColorBrewer palette
+  coord_map("sinusoidal") +
+  guides(fill = FALSE) +
+  theme_minimal() +
+  ylim(-55, 85)
+```
+
+Projections are fun. You might want to write a function that takes the projection string as an argument and make some more plots. Here we use the ```...``` arguments to pass optional arguments to the ```coord_map``` function. This allows you to use projections that require extra parameters. This function returns a ggplot2 object, which then gets printed to the console by default. The print command for ggplot2 objects is overridden to draw a graphic. You can learn more about this by studying [S3 object methods](http://adv-r.had.co.nz/OO-essentials.html). Notice here that we set the ```group``` aesthetic to designate the polygon membership, and then use the permuted integer values of group for colors.
+
+```{r fig.width = 6, fig.height = 6, fig.align = 'center'}
+world_proj = function(projection, ...)  # The result of the final expression in the function is returned
+{
+  ggplot(w, aes(x = long, y = lat, group = group)) +
+    geom_polygon(aes(fill = sample(as.integer(group))),
+                 color = rgb(1, 1, 1, 0.1)) +            # color is NOT an aesthetic
+    scale_fill_distiller(palette = "Set1") +
+    coord_map(projection, ...) +              # ... is replaced dynamically
+    guides(fill = FALSE) +
+    theme_minimal() +
+    ylim(-55, 85)
+}
+world_proj("gall", 0)  # zero passed to the coord_map function
+```
+
+## Plotting with simple features library
+
+The ```sf``` library stores and manipulates OGC "Simple Features". This is a widely established standard for working with GIS data. You can read more about it [here](http://www.opengeospatial.org/standards/sfa) or search the web. An introduction to ```sf``` is [here](https://cran.r-project.org/web/packages/sf/vignettes/sf1.html). We will be using the ```sf``` library for working with vector data: points, lines, polygons, etc.
+
+```{r}
+nc <- st_read(system.file("shape/nc.shp", package="sf"))  # Read a shapefile included with the sf package
+```
+
+The big change between the ```sf``` package and the old ```sp``` package is that simple features are stored independently in columns of a data frame. This make working with simple features much easier. You can see below that there is a column in the data frame named ```geometry```. That holds the simple features. And in this case it is a set of MULTIPOLYGON simple features.
+
+***
+
+**Note**
+
+The ```str``` function is really useful on the command line, but do not use it when writing software or coding analyses. There are other ways to get information about objects. ```str``` is just for taking a quick look. You might also have a look at the ```glimpse``` function in ```tidyverse```.
+
+***
+
+```{r}
+str(nc)   # internal structure
+```
+
+Making a plot of a data frame with simple features is pretty easy.
+
+```{r}
+plot(nc, max.plot = 14)
+```
+
+By default, every non-simple-feature column was used to color the polygons and a separate map generated for each. The ```sf``` package chooses a default palette for continuous and categorical maps. Notice that the factors (see the output of ```str``` above), R's type for categories, plotted with a different color scheme.
+
+## Plotting with the ggmap package
+
+The ```ggmap``` package can produce remarkably nice maps. It does this by pulling map data from service like Google Maps, which you can then render locally. What is really nice is that ```ggmap``` can exploit Google's geocoding service to look up place-names.
+
+```{r fig.width = 6, fig.height = 6, fig.align = 'center'}
+utmap = get_map("University of Texas at Austin")
+tryCatch(ggmap(utmap), error = function(...)
+{
+  devtools::install_github("dkahle/ggmap") # get dev version if needed
+  ggmap(utmap)
+})
+```
+
+Now lets load some data to overlay. I will use the ```sf``` package to load zip-code polygons for the Austin area. (I have conveniently stashed them with this tutorial.) One rather non-intuitive and unfortunate oversight in the ```sf``` package is that it requires you to specify a layer name in addition ot the file name. This is because GIS formats usually can contain multiple layers. It probably should "just work", but does not, so you have to examine the input file to find the layers. I happen to know the layer name in this data file.
+
+Also, ```sf``` is pretty new, so it might throw some errors. In the following, I set the map projection manually. You can find out about map projections and EPSG codes at [epsg.io](http://epsg.io/).
+
+```{r}
+zipcodes = read_sf("Zipcodes.geojson", "OGRGeoJSON")
+st_crs(zipcodes) = 4326          # Set the map projection to WGS84
+str(zipcodes)
+```
+```{r fig.width = 6, fig.height = 6, fig.align = 'center'}
+plot(zipcodes, max.plot = 11)  # all attribute columns plotted
+```
+
+Now with ```ggmap```. We have to use the ```tidy``` command from ```ggplot2``` to convert from the ```sf``` format to a regular data frame with latitude and longitude coordinates. We do this by first converting to the old ```sp``` format and then evoking the tidy command. When tidying map data, you need to specify the grouping variable, which in this case is ```zipcode```. In the plot below, I use ```alpha``` to overlay transparent fills.
+
+```{r fig.width = 6, fig.height = 6, fig.align = 'center'}
+zip = tidy(as(zipcodes, "Spatial"), region = "zipcode") # conver to sp and then tidy
+ggmap(utmap) +
+  geom_polygon(data = zip,
+               aes(x = long, y = lat, group = group, fill = group),
+               color = rgb(1, 0, 0, 0.2), alpha = 0.1) +
+  guides(fill = FALSE)
+```
+The ```get_map``` function takes a ```zoom``` argument where ```3``` is continent and ```21``` is building-scale. You can also specify different map types, like satellite or terrain.
+
+```{r fig.width = 6, fig.height = 6, fig.align = 'center'}
+utmap = get_map("University of Texas at Austin", zoom = 16, maptype = "satellite")
+ggmap(utmap) +
+  geom_polygon(data = zip,
+               aes(x = long, y = lat, group = group, fill = sample(group)),
+               color = rgb(1, 0, 0, 0.2), alpha = 0.1) +
+  annotate("text", y = 30.285174, x = -97.735462, color = "white",
+           label = "We are here") +
+  guides(fill = FALSE)
+```
+
+## Exercises
+
+1. Examine the documentation for the ```maps``` and ```maptools``` packages and find data mapping other regions.
+2. Map these data for other regions using ggplot2.
+3. Try some alternative color palettes.
+4. Try some alternative map projections.
+5. Can you plot with a custom color map of your own design?
+1. Explore different plotting options with the ```sf``` library. [Hint: use ```?plot.sf``` to get help with the ```sf``` version of plot.]
+1. [Advanced] Modify the function above to allow many more options, like using a different palette, different data, etc.
+6. [Advanced] Grab some polygon or other map data from the web and plot that.
+1. [Advanced] Try using ```ggmap``` to plot a map of texas with county boundaries.

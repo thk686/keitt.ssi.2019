@@ -1,0 +1,255 @@
+---
+title: "Extracting raster using vector"
+author: "Tim Keitt"
+date: "May 26, 2016"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(message = FALSE)
+knitr::opts_chunk$set(cache = TRUE)
+```
+
+## Preliminaries
+
+```{r}
+# Make sure we're in the right place
+if (!file.exists("rasvec.Rmd")) stop("This demo must be run from the same directory as the file")
+```
+
+## Species data
+
+The R [dismo](https://cran.r-project.org/web/packages/dismo/index.html) package contains facilities for downloading biodiversity data and constructing species distribution models. This will illustrate pulling data from raster layers using vector (points in this case) locations.
+
+Let's try pulling occurrence records for the Golden-Cheeked Warbler, a threatened bird that breeds near Austin. 
+
+First we load some packages.
+
+```{r message=FALSE}
+pacman::p_load("tidyverse")
+pacman::p_load("dismo")
+pacman::p_load("tigris")
+pacman::p_load("sf")
+pacman::p_load("raster")
+pacman::p_load("lwgeom")
+```
+
+Next we need to load the locations where the warbler has been observed. We can do this using the `gbif` function from the `dismo` package. It pulls biodiversity data from the [Global Biodiversity Information Faciliy](https://www.gbif.org/). Because this can be slow, I have cached the data locally.
+
+```{r}
+if (file.exists("gcwa.rds")) {
+  gcwa <- readRDS("gcwa.rds")
+} else {
+  gcwa <- gbif("Setophaga", "chrysoparia", removeZeros = TRUE)
+}
+```
+
+Next we need to define our region-of-interest. We will limit our analysis to fall within the borders of Texas. The US Census has shapefiles for all the states, as well as many other geographic features. Spatial census data can be retrieved using the `tigris` package.
+
+```{r}
+# Grab the boundary of Texas from the US Census and convert to sf format
+states <- st_as_sf(tigris::states(TRUE))
+texas <- subset(states, NAME == "Texas")
+
+# Transform the boundary and simplify
+texas <- st_transform(texas, 3083) # Azimuthal Equal Area
+texas <- st_simplify(texas, 10000) # simplify to 10km scale
+```
+
+Next I convert the observation locations from GBIF into an sf object for manipulation. This will make it a first-class spatial feature with projection metadata. I will also filter the data to avoid missing coordinates. Some GBIF records will not include a spatial location so we need to get rid of those. Here I am using `dplyr` with pipes. We will also subset the point to those that fall within Texas.
+
+```{r}
+gcwa.sf <- gcwa %>%
+  filter(is.finite(lon), is.finite(lat)) %>%
+  st_as_sf(coords = c("lon", "lat"), crs = 4326) %>%
+  st_transform(crs = 3083) %>%
+  filter(st_within(., texas, sparse = FALSE)[, 1])
+```
+
+Now lets plot. Ggplot is a bit slow ploting large numbers of points, so I subsample.
+
+```{r}
+ggplot() +
+  geom_sf(data = texas) +
+  geom_sf(data = sample_n(gcwa.sf, 500), color = "steelblue")
+```
+
+We can pull down [worldclim](http://www.worldclim.org/) data and use for modeling.
+
+```{r, eval=FALSE}
+if (!file.exists("bioclim_texas.tif")) # Just to avoid redoing this
+{
+  # We only want the worldclim tiles that covers texas
+  wcdat1 <- getData("worldclim",
+    path = tempdir(), var = "bio", res = 0.5,
+    lon = bbox(texas)[1], lat = bbox(texas)[2]
+  )
+  wcdat1 <- crop(wcdat1, texas)
+
+  # Need to get the adjacent worldclim tiles
+  wcdat2 <- getData("worldclim",
+    path = tempdir(), var = "bio", res = 0.5,
+    lon = bbox(texas)[1], lat = bbox(texas)[4]
+  )
+  wcdat2 <- crop(wcdat2, texas)
+
+  wcdat3 <- getData("worldclim",
+    path = tempdir(), var = "bio", res = 0.5,
+    lon = bbox(texas)[3], lat = bbox(texas)[2]
+  )
+  wcdat3 <- crop(wcdat3, texas)
+
+  wcdat4 <- getData("worldclim",
+    path = tempdir(), var = "bio", res = 0.5,
+    lon = bbox(texas)[3], lat = bbox(texas)[4]
+  )
+  wcdat4 <- crop(wcdat4, texas)
+
+  # Merge them together (and crop just to be sure -- not really needed)
+  wcdat <- crop(merge(wcdat1, wcdat2, wcdat3, wcdat4), texas)
+
+  # Save the result
+  writeRaster(wcdat, "bioclim_texas", "GTiff")
+}
+```
+
+At this point, we need to transform to geographic coordinates to match the worldclim data.
+
+```{r}
+texas <- st_transform(texas, 4326)
+gcwa.sf <- st_transform(gcwa.sf, 4326)
+```
+
+Now let's get the data out. This is a bit slow.
+
+```{r}
+# Read the data from local file
+# Avoids re-downloading
+wcdat <- brick("bioclim_texas.tif")
+
+bioclim.df <- extract(wcdat, gcwa.sf, df = TRUE)
+
+# What we have now are the values of the raster layers at each of the observation points
+head(bioclim.df)
+```
+
+Convert the bioclim data to sf format and remove duplicate coordinates that arise when observation locations fall within the same bioclim cell.
+
+```{r}
+# bind the points to the bioclim data
+gcwa_bioclim.sf <- st_as_sf(cbind(bioclim.df, st_coordinates(gcwa.sf)), coords = c("X", "Y"), crs = 4326) %>%
+  distinct(geometry, .keep_all = TRUE)
+```
+
+Let's get the elevation layer for plotting.
+
+```{r}
+# plot points over the bioclim data
+# layer one is elevation
+elev <- subset(wcdat, 1)
+elev <- mask(elev, texas)
+```
+
+Now we can plot. Ggplot does not handle rasters very well, so we use base graphics.
+
+```{r}
+plot(elev, xaxs = "r", yaxs = "r")
+points(st_coordinates(gcwa_bioclim.sf), pch = 19, cex = 0.2, col = "red")
+```
+
+With these data, we can build a distribution model that predicts the occurrence of the species in places outside of the training set. We need to generate a collection of pseudo-absences. I'll use a buffer to separate them from the known locations.
+
+```{r}
+gcwa_buffer <- st_buffer(gcwa_bioclim.sf, 0.2) # This is crazy slow in rgeos
+```
+This shows the points with the buffer. Its better to buffer in a Cartesian coordinate system, but this is sufficient for our use.
+
+```{r}
+plot(elev, xaxs = "r", yaxs = "r")
+points(st_coordinates(gcwa_buffer), pch = 19, cex = 0.1)
+points(st_coordinates(gcwa_bioclim.sf), pch = 19, cex = 0.2, col = "red")
+```
+
+Now we get a bunch of random locations not too near the warbler locations. We create a polygon that includes the area of Texas but excludes our buffer areas.
+
+```{r}
+not_gcwa <- st_difference(texas, st_union(gcwa_buffer))
+rpts <- st_sample(not_gcwa, nrow(gcwa_bioclim.sf), "random")
+```
+
+Now we can plot our sample design for the analysis.
+
+```{r}
+plot(st_coordinates(texas), pch = 19, cex = 0.1, asp = 1)
+points(st_coordinates(rpts), pch = 19, cex = 0.2)
+points(st_coordinates(gcwa_bioclim.sf), pch = 19, cex = 0.2, col = "red")
+```
+
+Now we get the bioclim variables for each of our random points.
+
+```{r}
+background.df <- extract(wcdat, as(rpts, "Spatial"), df = TRUE)
+background_bioclim.sf <- st_as_sf(cbind(background.df, st_coordinates(rpts)), coords = c("X", "Y"), crs = 4326) %>%
+  distinct(geometry, .keep_all = TRUE)
+```
+
+It will help to put more meaningful names on the columns.
+
+```{r}
+names(background_bioclim.sf) <- make.names(c("ID", "Annual Mean Temperature", "Mean Diurnal Range", "Isothermality", "Temperature Seasonality", "Max Temperature of Warmest Period", "Min Temperature of Coldest Period", "Temperature Annual Range", "Mean Temperature of Wettest Quarter", "Mean Temperature of Driest Quarter", "Mean Temperature of Warmest Quarter", "Mean Temperature of Coldest Quarter", "Annual Precipitation", "Precipitation of Wettest Period", "Precipitation of Driest Period", "Precipitation Seasonality", "Precipitation of Wettest Quarter", "Precipitation of Driest Quarter", "Precipitation of Warmest Quarter", "Precipitation of Coldest Quarter", "geometry"))
+names(gcwa_bioclim.sf) <- names(background_bioclim.sf)
+```
+
+For modeling, we will combine the warbler locations with the random location and code the warbler locations with a 1 and the random locations with a 0. We call this new variable "Indic" for indicator of presence. We also drop the old ID column.
+
+```{r}
+gcwa_bioclim.df <- gcwa_bioclim.sf
+st_geometry(gcwa_bioclim.df) <- NULL
+background_bioclim.df <- background_bioclim.sf
+st_geometry(background_bioclim.df) <- NULL
+dismod.df <- rbind(
+  cbind(Indic = 1, gcwa_bioclim.df),
+  cbind(Indic = 0, background_bioclim.df)
+)
+dismod.df$ID <- NULL
+```
+
+Now we are ready to model! There are many many methods for this problem. We could choose for example a generalized linear model (logistic regression) or a machine learning algorithm like random forests (TM).
+
+First, we'll try logistic regression.
+
+```{r}
+mod1 <- glm(Indic ~ ., data = dismod.df, family = binomial())
+summary(mod1)
+```
+
+```{r}
+names(wcdat) <- names(gcwa_bioclim.sf)[-c(1, 21)]
+all_texas <- as.data.frame(wcdat) # big!!!
+mod1.pred <- predict(mod1, all_texas, "response") # This takes awhile to run
+md1pre.rast <- rasterFromXYZ(cbind(coordinates(wcdat), mod1.pred))
+```
+
+```{r}
+plot(md1pre.rast)
+points(st_coordinates(texas), pch = 19, cex = 0.1)
+points(st_coordinates(gcwa_bioclim.sf), pch = 19, cex = 0.2, col = "red")
+```
+
+Let's try a support vector machine algorithm. This is a particularly powerful way to classify data.
+
+```{r}
+# pacman::p_load(kernlab)
+# dismod.df$Indic = as.factor(dismod.df$Indic)
+# mod1 = ksvm(Indic ~ ., data = dismod.df)
+# print(mod1)
+```
+
+It would be nice to output probabilities rather than a predicted classification, but at least on my workstation, that used too much memory.
+
+```{r}
+# all_texas = as.data.frame(wcdat)  # big!!!
+# mod1.pred = predict(mod1, all_texas)  # This takes awhile to run
+```
+

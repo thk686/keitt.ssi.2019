@@ -1,0 +1,22 @@
+---
+title: "US Census"
+output: html_notebook
+---
+
+```{r}
+pacman::p_load(tigris)
+pacman::p_load(tidycensus)
+```
+
+```{r results='hide'}
+texas.counties <- counties(48) %>% st_as_sf() %>% st_transform(crs = 3083)
+```
+
+```{r}
+ggplot() +
+  geom_sf(data = st_simplify(texas.counties, 1e4))
+```
+
+```{r}
+county_area_water <- get_decennial("county", "AREAWATR", geometry = TRUE, state = 48)
+```

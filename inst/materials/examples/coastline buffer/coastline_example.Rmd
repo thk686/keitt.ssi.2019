@@ -1,0 +1,109 @@
+---
+title: "Coast Buffer"
+output:
+  html_document:
+    df_print: paged
+---
+
+```{r message=FALSE}
+pacman::p_load("tigris")
+pacman::p_load("sf")
+pacman::p_load("tidyverse")
+```
+
+Download the coastline data using the `tigris` package. This grabs data from the US Census. Here I transform to the [US National Atlas coordinate system](https://epsg.io/2163) and then extract only the Atlantic coast.
+
+```{r message=FALSE, results='hide'}
+coastline.sf <- coastline() %>% st_as_sf() %>% st_transform(crs = 2163)
+coastline.atlantic <- coastline.sf %>% filter(NAME == "Atlantic")
+```
+
+Plot the coast.
+
+```{r}
+ggplot() +
+  geom_sf(data = coastline.atlantic %>% st_simplify(dTolerance = 1e4))
+```
+
+Now we create a set of polygons that buffer each of the coastline line segments. We have to make the spatial set union of those polygons to make a single buffer (plus an extra for Puerto Rico).
+
+```{r}
+atlantic.buffer <- coastline.atlantic %>% st_buffer(1e5) %>% st_union() %>% st_sf()  # units are meters
+```
+
+Plot them together.
+
+```{r}
+ggplot() +
+  geom_sf(data = atlantic.buffer %>% st_simplify(dTolerance = 1e4)) +
+  geom_sf(data = coastline.atlantic %>% st_simplify(dTolerance = 1e4), color = "darkred")
+```
+
+Now we grab the national borders and internal divisions.
+
+```{r message=FALSE, results='hide'}
+nat <- nation() %>% st_as_sf() %>% st_transform(crs = 2163)
+divs <- divisions() %>% st_as_sf() %>% st_transform(crs = 2163)
+```
+
+By interesecting the buffer with the boundaries, we clip off the part of the buffer that is over the ocean.
+
+```{r}
+buf_int <- st_intersection(atlantic.buffer, divs)
+```
+
+Again plot it, this time limiting the plot area to the buffer region.
+
+```{r}
+ggplot() +
+  geom_sf(data = nat %>% st_simplify(dTolerance = 1e4)) +
+  geom_sf(data = buf_int %>% st_simplify(dTolerance = 1e4), fill = "red", alpha = 0.2) +
+  lims(x = st_bbox(buf_int)[c(1, 3)], y = st_bbox(buf_int)[c(2, 4)])
+```
+
+Now for all coastlines.
+
+```{r}
+ggplot() +
+  geom_sf(data = coastline.sf %>% st_simplify(dTolerance = 1e4))
+```
+
+As before, except with all coastlines.
+
+```{r}
+all.buffer <- coastline.sf %>% st_buffer(1e5) %>% st_union() %>% st_sf()
+```
+
+```{r}
+ggplot() +
+  geom_sf(data = all.buffer %>% st_simplify(dTolerance = 1e4)) +
+  geom_sf(data = coastline.sf %>% st_simplify(dTolerance = 1e4), color = "darkred")
+```
+
+```{r}
+all_buf_int <- st_intersection(all.buffer, divs)
+```
+
+```{r}
+ggplot() +
+  geom_sf(data = nat %>% st_simplify(dTolerance = 1e4)) +
+  geom_sf(data = all_buf_int %>% st_simplify(dTolerance = 1e4), fill = "red", alpha = 0.2) +
+  lims(x = st_bbox(all_buf_int)[c(1, 3)], y = st_bbox(all_buf_int)[c(2, 4)])
+```
+
+We could try to filter out all of the parts of the US not of interest using `dplyr::filter`.
+
+```{r results='hide'}
+states.sf <- states() %>% st_as_sf() %>% st_transform(crs = 2163)
+# states.sf %>% filter(!NAME %in% c("Hawaii", "Puerto Rico"))
+```
+
+Plot the final output.
+
+```{r}
+ggplot() +
+  geom_sf(data = states.sf %>% st_simplify(dTolerance = 1e4)) +
+  geom_sf(data = all_buf_int %>% st_simplify(dTolerance = 1e4), fill = "red", alpha = 0.2) +
+  lims(x = st_bbox(states.sf)[c(1, 3)], y = st_bbox(states.sf)[c(2, 4)])
+```
+

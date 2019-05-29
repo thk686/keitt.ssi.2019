@@ -1,0 +1,65 @@
+---
+title: "Mapping Texas Parks"
+output:
+  html_document:
+    df_print: paged
+---
+
+This is an example of plotting data from TXPWD. The Gould Eco Regions data can be found [here](https://tpwd.texas.gov/gis/resources/gould-eco-regions.zip).
+
+Load ```sf```.
+
+```{r message=FALSE, warning=FALSE}
+library(tidyverse)
+library(sf)
+```
+
+Read in the shapefile.
+
+```{r}
+ger <- st_read("GouldEcoRegions.shp") %>% st_simplify(dTolerance = 1e3)
+```
+
+Print summary of the columns.
+
+```{r}
+summary(ger)
+```
+
+Look the Coordinate Reference System. Its the [Texas State Mapping System](http://epsg.io/3081-1734).
+
+```{r}
+st_crs(ger)
+```
+
+We can plot using the ```sf``` plot function.
+
+```{r}
+if (compareVersion(as.character(packageVersion("ggplot2")), "2.2.1") < 1)
+  devtools::install_github("hadley/ggplot2")
+library(ggplot2)
+```
+
+```{r}
+ggplot() +
+  geom_sf(data = ger, aes(fill = Shape_Area)) -> er.plot
+er.plot
+```
+
+```{r}
+er.plot + geom_sf(data = st_centroid(ger), color = "red")
+```
+
+Read in park boundaries
+
+```{r}
+parks <- st_read("TPWDStateParksBoundary.shp") %>% st_simplify(dTolerance = 1e3)
+```
+
+With buffering and alpha, we can create a halo around parks to make small polygons more visible.
+
+```{r}
+er.plot +
+  geom_sf(data = st_buffer(parks, 2e4), color = NA, fill = "darkred", alpha = 0.25) +
+  geom_sf(data = parks, color = "red", fill = NA)
+```
