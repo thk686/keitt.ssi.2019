@@ -5,12 +5,10 @@ solutions=F
 
 ```
 
-Load a few plot helpers.
-
-```{r}
+```{r include=FALSE}
 color.ramp <-function(palette="Spectral", reverse=TRUE, sample=FALSE)
 {
-  pacman::p_load(RColorBrewer)
+  library(RColorBrewer)
   n <- brewer.pal.info[palette,]$maxcolors
   pal <- brewer.pal(n, palette)
   if (reverse) pal <- rev(pal)
@@ -20,7 +18,7 @@ color.ramp <-function(palette="Spectral", reverse=TRUE, sample=FALSE)
 
 set.spplot.colors <- function(ncol = 100, palette = "Spectral", reverse = TRUE, sample = FALSE)
 {
-  pacman::p_load(lattice)
+  library(lattice)
   pal <- color.ramp(palette, reverse, sample)(ncol)
   trellis.par.set(regions = list(col = pal))
 }
@@ -30,8 +28,8 @@ set.spplot.colors <- function(ncol = 100, palette = "Spectral", reverse = TRUE, 
 ## Raster Data Sources
 
 ```{r}
-pacman::p_load(raster)
-pacman::p_load(rasterVis)
+library(raster)
+library(rasterVis)
 ```
 
 ### Raster Visualization
@@ -52,9 +50,13 @@ streamplot(r)
 ```
 
 #### Interactive 3D Visualization
-Mouse wheel to zoom, click and drag to rotate. This code will not be run when generating the html. Try it in R.
+Mouse wheel to zoom, click and drag to rotate.
+
+This code will not be run when knitting. Try it in R (select the lines with the mouse and hit 'Run' above).
 ```{r eval=F}
-pacman::p_load("rasterVis")
+library("rgl")
+library("rasterVis")
+library("raster")
 r <- raster("ncrast/elev_lid792_1m.tif")
 plot3D(r)
 ```
@@ -119,7 +121,7 @@ gdal_polygonize.py ncrast/zipcodes.tif -f "ESRI Shapefile" extra zipcodes zipnum
 ```
 Now read in the shapefile and convert the zipnum attribute to a factor:
 ```{r}
-pacman::p_load(rgdal)
+library(rgdal)
 zipcodes <- readOGR(dsn="extra", layer="zipcodes", verbose=F)
 zipcodes$zipnum <- factor(zipcodes$zipnum)
 spplot(zipcodes, col.regions=color.ramp("Set3")(nlevels(zipcodes$zipnum)))

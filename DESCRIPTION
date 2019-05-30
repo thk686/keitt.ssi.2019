@@ -45,9 +45,12 @@ Imports:
     mapproj,
     tidyverse,
     gstat,
+    stars,
     pacman,
     tigris,
-    tidycensus
+    tidycensus,
+    rgl,
+    rasterVis
 Suggests: 
     knitr,
     rmarkdown,

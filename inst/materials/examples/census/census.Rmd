@@ -26,6 +26,6 @@ ggplot() +
 ** It appears everyone is going to API keys, so this does not work without a registration. **
 
 ```{r eval=FALSE}
-county_area_water <- get_decennial("county", "AREAWATR", geometry = TRUE, state = 48,
-                                   key = "71cb5518cad1b2a8f996a1e5c36ee390c1ef7848")
+census_api_key("71cb5518cad1b2a8f996a1e5c36ee390c1ef7848")
+county_area_water <- get_decennial("county", "AREAWATR", geometry = TRUE, state = 48)
 ```

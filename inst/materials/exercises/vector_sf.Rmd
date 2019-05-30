@@ -267,7 +267,11 @@ Spatial interpolation is the process of using the values of a continuous variabl
 
 We will demonstrate spatial interpolation with the `gstat` package and Meuse data set.
 ```{r}
+library(sf)
+library(sp)
+library(stars)
 library(gstat)
+library(ggplot2)
 data(meuse)
 data(meuse.grid)
 data(meuse.riv)
@@ -276,8 +280,11 @@ data(meuse.riv)
 The first step is converting the data set to `sp` classes.
 ```{r}
 coordinates(meuse) <- ~x+y
+proj4string(meuse) <- CRS("+init=epsg:28992")
 coordinates(meuse.grid) <- ~x+y
+proj4string(meuse.grid) <- CRS("+init=epsg:28992")
 meuse.river <- SpatialPolygons(list(Polygons(list(Polygon(meuse.riv)), "meuse.riv")))
+proj4string(meuse.river) <- CRS("+init=epsg:28992")
 ```
 
 Now we convert to `sf`
@@ -301,8 +308,9 @@ There are many methods of spatially interpolating point data. A simple algorithm
 
 
 ```{r results='hide', fig.width=10}
-zinc.nvd <- krige(zinc ~ 1, meuse, meuse.grid)
-#spplot(zinc.nvd, "var1.pred", colorkey=T, main="Inverse Distance Zinc Estimates (ppm)")
+zinc.nvd <- krige(zinc ~ 1, locations = meuse, newdata = meuse.grid)
+ggplot(zinc.nvd) +
+  geom_sf(aes(color = var1.pred))
 ```
 
 #### Variograms
@@ -322,22 +330,27 @@ Ordinary Kriging assumes that the data are stationary, i.e., there is no spatial
 
 ```{r results='hide', fig.width=10}
 zinc.kriged <- krige(log(zinc)~1, meuse, meuse.grid, model=zinc.fitted)
-spplot(zinc.kriged, zcol="var1.pred", colorkey=T, main="Kriged Zinc Estimates (ppm)")
+ggplot(zinc.kriged) +
+  geom_sf(aes(color = var1.pred))
 ```
 
 #### Activity: Interpolate Annual Precipitation
 Interpolate the annual rainfall data in `precip_30ynormals` layer. 
 
-Functions: `readOGR`, `spsample`, `krige`, `spplot`, `variogram`, `fit.variogram`, `plot`
+Functions: `st_read`, `st_sample`, `krige`, `ggplot`, `variogram`, `fit.variogram`
 
 ```{r echo=solutions, results='hide', fig.width=10}
-precip <- readOGR(dsn="ncshape", layer="precip_30ynormals", verbose=F)
-pts <- spsample(nc_state, 5000, "regular")
+precip <- st_read(dsn = "ncshape", layer = "precip_30ynormals", quiet = TRUE)
+pts <- st_sample(nc_state, 5000, "regular")
 precip.nvd <- krige(annual ~ 1, precip, pts)
-spplot(precip.nvd, "var1.pred", colorkey=T, main="Inverse Distance Annual Precipitation Estimates")
-precip.ev <- variogram(annual~1, precip)
-precip.fitted <- fit.variogram(precip.ev, model=vgm(1, "Sph", 50000, 1))
+ggplot(precip.nvd) +
+  geom_sf(aes(color = var1.pred)) +
+  labs(title = "Kriged Annual Precipitation Estimates")
+precip.ev <- variogram(annual ~ 1, precip)
+precip.fitted <- fit.variogram(precip.ev, model = vgm(1, "Sph", 50000, 1))
 plot(precip.ev, precip.fitted)
-precip.kriged <- krige(annual ~ 1, precip, pts, model=precip.fitted)
-spplot(precip.kriged, "var1.pred", colorkey=T, main="Kriged Annual Precipitation Estimates")
+precip.kriged <- krige(annual ~ 1, precip, pts, model = precip.fitted)
+ggplot(precip.kriged) +
+  geom_sf(aes(color = var1.pred)) +
+  labs(title = "Kriged Annual Precipitation Estimates")
 ```
