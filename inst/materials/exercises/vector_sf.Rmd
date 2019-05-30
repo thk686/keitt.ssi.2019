@@ -176,7 +176,9 @@ counties <- boundary.county %>%
   filter(!is.na(NAME)) %>%
   group_by(NAME) %>%
   summarize(geometry = st_union(geometry))
-ggplot(counties) + geom_sf(aes(fill = NAME))
+ggplot(counties) +
+  geom_sf(aes(fill = NAME)) +
+  guides(fill = FALSE)
 ```
 
 #### Activity: Merge Counties into Regions
@@ -195,62 +197,67 @@ ggplot(counties.region) + geom_sf(aes(fill = region))
 ```
 
 #### Centroid
-The `gCentroid` routine calculates the centroid of the given geometry. The default behavior is to calculate the centroid of the entire geometry, but by passing `byid=TRUE` we can calculate the centroid of individual features.
+The `st_centroid` routine calculates the centroid of the given geometry.
 ```{r fig.width=10}
-county.centers <- gCentroid(counties, byid=T)
-plot(counties, col=county.colors, lwd=1.5)
-points(county.centers)
+county.centers <- st_centroid(counties)
+ggplot(counties) +
+  geom_sf(aes(fill = NAME)) +
+  geom_sf(data = county.centers) +
+  guides(fill = FALSE)
 ```
 
 #### Buffer
 Often the space surrounding a feature is of as much interest as the feature itself, particularly when intersecting overlaying points and lines on another dataset. We can use the `gBuffer` function to expand a geometry to include the area within a specified width. As with `gCentroid`, the default behavior is to create a buffer around the entire geometry, but by passing `byid=TRUE` we can calculate a buffer for individual features.
 ```{r fig.width=10}
-plot(nc_state, col="gray99", lwd=1.5)
-points(hospitals, pch=20, col="#0080ff")
+ggplot(nc_state) +
+  geom_sf() +
+  geom_sf(data = hospitals, color = "steelblue")
 ```
-Now use `gBuffer` to create a 10 mile buffer around each hospital:
+Now use `st_buffer` to create a 10 mile buffer around each hospital:
 ```{r echo=c(1,3), fig.width=10}
-hospitals.buffer <- gBuffer(hospitals, width=16000) # 16km is approx 10mi
-plot(nc_state, col="gray99", lwd=1.5)
-plot(hospitals.buffer, add=T)
-points(hospitals, pch=20, col="#0080ff")
+hospitals.buffer <- st_buffer(hospitals, 16000) # 16km is approx 10mi
+ggplot(nc_state) +
+  geom_sf() +
+  geom_sf(data = hospitals.buffer) +
+  geom_sf(data = hospitals, color = "steelblue")
 ```
 
 #### Activity: Wake County Firestation Coverage
-In this activity we will find the proportion of Wake County within 5km of a firestation using `gBuffer`, `gDifference`, and `gArea`.
+In this activity we will find the proportion of Wake County within 5km of a firestation using `st_buffer`, `st_distance`, and `st_area`.
 
-Functions: `gBuffer`, `plot`, `points`, `gArea`, `gDifference`
+Functions: `st_buffer`, `st_combine`, `ggplot`, `st_area`, `st_difference`
 
 ```{r echo=solutions}
-firestations.buffer <- gBuffer(firestations, width=5000)
-plot(wake, col="gray99", lwd=1.5)
-plot(firestations.buffer, add=T)
-points(firestations, pch=20, col="red")
-uncovered.area <- gArea(gDifference(wake, firestations.buffer))
-total.area <- gArea(wake)
+firestations.buffer <- st_buffer(st_combine(firestations), 5000)
+ggplot(wake) +
+  geom_sf() +
+  geom_sf(data = firestations.buffer) +
+  geom_sf(data = firestations)
+uncovered.area <- st_area(st_difference(wake, firestations.buffer))
+total.area <- st_area(wake)
 (total.area - uncovered.area) / (total.area)
 ```
 
 #### Overlay
-The `over` function (and `%over%` operator) is used to extract attributes from one layer at locations defined by another. For example we can overlay the `hospitals` point layer with the `boundary_county` polygon layer to obtain the county name at each hospital location.
+In `sf` it is extremely easy to join tables. `sf` overrides the `[]` indexing function when indexing with another `sf` table. Here is an example of joining two tables. It adds the columns from the `boundary.county` table to the `hospitals` table. We can use that to give a county name to each hosptial. We extract only the `NAME` column from the `boundary.county` table in this example.
 ```{r}
-hospitals.county <- table(hospitals %over% boundary.county["NAME"])
-print(hospitals.county)
+hospitals.joined <- hospitals[boundary.county$NAME, ]
+table(hospitals.joined$COUNTY)
 ```
-Note the presence of zeros in the table: the overlay operation returned the `NAME` attribute of every county in the layer, including those without a hospital. We can use the table to create a thematic map.
+Note the presence of zeros in the table: the inner join operation returned the `NAME` attribute of every county in the layer, including those without a hospital. We can use the table to create a thematic map.
 
 #### Activity: North Carolina Hospitals per County
-Compute and plot the number of hospitals in each county in North Carolina.
+Compute and plot the number of hospitals in each county in North Carolina. Hint: you can do an inner join between the `boundary.county` table and the `hosptials` table to get a separate row for each hospital-county combination.
 
-Functions: `as.data.frame`, `names`, `c`, `factor`, `SpatialPolygonsDataFrame`, `color.ramp`, `nlevels`, `spplot`
+Functions: `st_join`, `group_by`, `summarize`, `n`, `st_simplify`, `ggplot`, `geom_sf`
 
 ```{r echo=solutions, fig.width=10}
-hospitals.county.df <- as.data.frame(hospitals.county)
-names(hospitals.county.df) <- c("county","count")
-hospitals.county.df$count <- factor(hospitals.county.df$count)
-hospitals.county.spdf <- SpatialPolygonsDataFrame(counties, hospitals.county.df, match.ID=F)
-hospital.county.colors <- color.ramp("Blues")(nlevels(hospitals.county.df$count))
-spplot(hospitals.county.spdf, zcol="count", main="Hospitals per County", col.regions=hospital.county.colors, lwd=1.5)
+n_hosp <- boundary.county[hospitals,] %>%
+  group_by(NAME) %>%
+  summarize(num_hospitals = n()) %>%
+  st_simplify(TRUE, 1e3)
+ggplot(n_hosp) +
+  geom_sf(aes(fill = num_hospitals))
 ```
 
 ### Spatial Interpolation
@@ -273,15 +280,19 @@ coordinates(meuse.grid) <- ~x+y
 meuse.river <- SpatialPolygons(list(Polygons(list(Polygon(meuse.riv)), "meuse.riv")))
 ```
 
-We can visualize the data set as a whole.
-```{r fig.width=10}
-set.spplot.colors(palette="Spectral")
-spplot(meuse, c("zinc", "cadmium","lead","copper"), sp.layout=list(list("sp.polygons", meuse.river, fill="#0080ff")), col="gray35", colorkey=T, main="Heavy Metal Concentration in Top Soil (ppm)")
+Now we convert to `sf`
+
+```{r}
+meuse <- st_as_sf(meuse)
+meuse.grid <- st_as_sf(meuse.grid)
+meuse.river <- st_as_sf(meuse.river)
 ```
 
-A bubble plot is an effective graphical representation for marked point data.
-```{r}
-bubble(meuse["zinc"], sp.layout=list(list("sp.polygons", meuse.river, fill="#0080ff")), col="gray35", fill=F, main="Zinc Concentration (ppm)")
+We can visualize the data set as a whole.
+```{r fig.width=10}
+ggplot(meuse) +
+  geom_sf(data = meuse.river) +
+  geom_sf(aes(color = zinc, size = zinc))
 ```
 
 #### Inverse Distance Weighting
@@ -291,7 +302,7 @@ There are many methods of spatially interpolating point data. A simple algorithm
 
 ```{r results='hide', fig.width=10}
 zinc.nvd <- krige(zinc ~ 1, meuse, meuse.grid)
-spplot(zinc.nvd, "var1.pred", colorkey=T, main="Inverse Distance Zinc Estimates (ppm)")
+#spplot(zinc.nvd, "var1.pred", colorkey=T, main="Inverse Distance Zinc Estimates (ppm)")
 ```
 
 #### Variograms

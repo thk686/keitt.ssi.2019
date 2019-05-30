@@ -102,7 +102,7 @@ ggplot(world, aes(x = long, y = lat, )) +
 
 Here we added some color by specifying the ```fill``` attribute to ```geom_polygon``` and used the group factor to choose the colors. The default color map is not too keen, but we can fix that. The best colors come from the [RColorBrewer package](https://cran.r-project.org/package=RColorBrewer) and ggplot2 knows how to use it.
 
-```{r}
+```{r warning=FALSE}
 data(wrld_simpl)  # from the maptools package
 w = tidy(wrld_simpl) # make this something that ggplot2 can work with
 str(w)
@@ -121,7 +121,7 @@ ggplot(w, aes(x = long, y = lat)) +
 
 The default colors are pretty ugly. For better colors, we can convert the fill to a number and use the ```scale_fill_distiller``` command. We will also use the ```sample``` command to randomize the colors each time. The ```sample``` function will randomly permute the input vector, e.g., ```sample(1:5) == c(5, 1, 2, 4, 3)```. The ```rgb``` command builds a color with different red, green and blue intensities. The fourth argument to ```rgb``` sets transparency.
 
-```{r fig.width = 6, fig.height = 6, fig.align = 'center'}
+```{r fig.width = 6, fig.height = 6, fig.align = 'center', warning=FALSE}
 ggplot(w, aes(x = long, y = lat, group = group)) +
   geom_polygon(aes(fill = sample(as.integer(group))),
                color = rgb(1, 1, 1, 0.1)) +            # color sets outlines
@@ -134,7 +134,7 @@ ggplot(w, aes(x = long, y = lat, group = group)) +
 
 Projections are fun. You might want to write a function that takes the projection string as an argument and make some more plots. Here we use the ```...``` arguments to pass optional arguments to the ```coord_map``` function. This allows you to use projections that require extra parameters. This function returns a ggplot2 object, which then gets printed to the console by default. The print command for ggplot2 objects is overridden to draw a graphic. You can learn more about this by studying [S3 object methods](http://adv-r.had.co.nz/OO-essentials.html). Notice here that we set the ```group``` aesthetic to designate the polygon membership, and then use the permuted integer values of group for colors.
 
-```{r fig.width = 6, fig.height = 6, fig.align = 'center'}
+```{r fig.width = 6, fig.height = 6, fig.align = 'center', warning=FALSE}
 world_proj = function(projection, ...)  # The result of the final expression in the function is returned
 {
   ggplot(w, aes(x = long, y = lat, group = group)) +
@@ -179,11 +179,19 @@ plot(nc, max.plot = 14)
 
 By default, every non-simple-feature column was used to color the polygons and a separate map generated for each. The ```sf``` package chooses a default palette for continuous and categorical maps. Notice that the factors (see the output of ```str``` above), R's type for categories, plotted with a different color scheme.
 
+More recently, the `ggplot2` package has been extended to work with `sf` objects. It can be *very* slow but I am told that the next release of `ggplot2` and `sf` will fix that problem.
+
+```{r}
+ggplot(nc) + geom_sf()
+```
+
 ## Plotting with the ggmap package
+
+**Unfortunately, Google has seen fit to require a private API key tied to a credit card number, so I cannot use ggmap for tutorials anymore.**
 
 The ```ggmap``` package can produce remarkably nice maps. It does this by pulling map data from service like Google Maps, which you can then render locally. What is really nice is that ```ggmap``` can exploit Google's geocoding service to look up place-names.
 
-```{r fig.width = 6, fig.height = 6, fig.align = 'center'}
+```{r fig.width = 6, fig.height = 6, fig.align = 'center', eval=FALSE}
 utmap = get_map("University of Texas at Austin")
 tryCatch(ggmap(utmap), error = function(...)
 {
@@ -201,13 +209,14 @@ zipcodes = read_sf("Zipcodes.geojson", "OGRGeoJSON")
 st_crs(zipcodes) = 4326          # Set the map projection to WGS84
 str(zipcodes)
 ```
+
 ```{r fig.width = 6, fig.height = 6, fig.align = 'center'}
 plot(zipcodes, max.plot = 11)  # all attribute columns plotted
 ```
 
 Now with ```ggmap```. We have to use the ```tidy``` command from ```ggplot2``` to convert from the ```sf``` format to a regular data frame with latitude and longitude coordinates. We do this by first converting to the old ```sp``` format and then evoking the tidy command. When tidying map data, you need to specify the grouping variable, which in this case is ```zipcode```. In the plot below, I use ```alpha``` to overlay transparent fills.
 
-```{r fig.width = 6, fig.height = 6, fig.align = 'center'}
+```{r fig.width = 6, fig.height = 6, fig.align = 'center', warning=FALSE, eval=FALSE}
 zip = tidy(as(zipcodes, "Spatial"), region = "zipcode") # conver to sp and then tidy
 ggmap(utmap) +
   geom_polygon(data = zip,
@@ -217,7 +226,7 @@ ggmap(utmap) +
 ```
 The ```get_map``` function takes a ```zoom``` argument where ```3``` is continent and ```21``` is building-scale. You can also specify different map types, like satellite or terrain.
 
-```{r fig.width = 6, fig.height = 6, fig.align = 'center'}
+```{r fig.width = 6, fig.height = 6, fig.align = 'center', eval=FALSE}
 utmap = get_map("University of Texas at Austin", zoom = 16, maptype = "satellite")
 ggmap(utmap) +
   geom_polygon(data = zip,

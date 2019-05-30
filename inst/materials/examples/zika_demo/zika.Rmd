@@ -70,7 +70,6 @@ ggplot(zika_gg, aes(easting, northing, group = group)) +
 Let's save the data frame for reuse.
 
 ```{r save-output}
-pacman::p_load("rgdal")
 if (!file.exists("zika_states.gml"))
-  rgdal::writeOGR(sb_zika, "zika_states.gml", "zika_states", "GML")
+  sf::st_write(sb_zika, "zika_states.gml")
 ```

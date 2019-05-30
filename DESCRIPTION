@@ -44,7 +44,10 @@ Imports:
     nycflights13,
     mapproj,
     tidyverse,
-    gstat
+    gstat,
+    pacman,
+    tigris,
+    tidycensus
 Suggests: 
     knitr,
     rmarkdown,

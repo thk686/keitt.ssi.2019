@@ -343,12 +343,12 @@ Grid attributes:
 2               0.5        1       100
 Data attributes:
  as.vector.surf.  
- Min.   :-2.8413  
- 1st Qu.:-0.8939  
- Median :-0.3026  
- Mean   :-0.2328  
- 3rd Qu.: 0.3828  
- Max.   : 2.6480  
+ Min.   :-2.7178  
+ 1st Qu.:-0.7324  
+ Median :-0.1878  
+ Mean   :-0.1891  
+ 3rd Qu.: 0.3430  
+ Max.   : 2.8305  
 ```
 
 Working with raster data
@@ -395,11 +395,11 @@ show(x)   # empty raster
 ```
 
 ```
-class       : RasterLayer 
-dimensions  : 4, 4, 16  (nrow, ncol, ncell)
-resolution  : 1, 1  (x, y)
-extent      : 0, 4, 0, 4  (xmin, xmax, ymin, ymax)
-coord. ref. : +proj=longlat +datum=WGS84 +ellps=WGS84 +towgs84=0,0,0 
+class      : RasterLayer 
+dimensions : 4, 4, 16  (nrow, ncol, ncell)
+resolution : 1, 1  (x, y)
+extent     : 0, 4, 0, 4  (xmin, xmax, ymin, ymax)
+crs        : +proj=longlat +datum=WGS84 +ellps=WGS84 +towgs84=0,0,0 
 ```
 
 Working with raster data
@@ -421,7 +421,7 @@ x[]
 ```
 
 ```
- [1] 8 2 7 3 1 5 4 3 3 3 2 2 0 6 1 2
+ [1] 1 2 2 2 4 2 3 3 1 2 2 1 3 2 6 6
 ```
 
 Working with raster data
@@ -445,7 +445,7 @@ values(x)
 ```
 
 ```
- [1] 8 2 7 3 1 5 4 3 3 3 2 2 0 6 1 2
+ [1] 1 2 2 2 4 2 3 3 1 2 2 1 3 2 6 6
 ```
 
 ```r
@@ -454,7 +454,7 @@ values(x)
 ```
 
 ```
- [1] 9 3 8 4 2 6 5 4 4 4 3 3 1 7 2 3
+ [1] 2 3 3 3 5 3 4 4 2 3 3 2 4 3 7 7
 ```
 
 Working with raster data
@@ -468,7 +468,7 @@ values(y)
 ```
 
 ```
-[1] 5.00 5.25 4.00 2.75
+[1] 3.25 3.50 3.00 4.75
 ```
 
 ```r
@@ -536,12 +536,12 @@ Grid attributes:
 2               0.5        1       100
 Data attributes:
  as.vector.surf.  
- Min.   :-2.8413  
- 1st Qu.:-0.8939  
- Median :-0.3026  
- Mean   :-0.2328  
- 3rd Qu.: 0.3828  
- Max.   : 2.6480  
+ Min.   :-2.7178  
+ 1st Qu.:-0.7324  
+ Median :-0.1878  
+ Mean   :-0.1891  
+ 3rd Qu.: 0.3430  
+ Max.   : 2.8305  
 ```
 
 Working with raster data
@@ -556,11 +556,11 @@ summary(r)
 
 ```
         as.vector.surf.
-Min.         -2.8413485
-1st Qu.      -0.8939332
-Median       -0.3025848
-3rd Qu.       0.3828126
-Max.          2.6480189
+Min.         -2.7178473
+1st Qu.      -0.7324029
+Median       -0.1877568
+3rd Qu.       0.3430456
+Max.          2.8305238
 NA's          0.0000000
 ```
 
@@ -596,13 +596,13 @@ head(expsurf)
 ```
 
 ```
-    x    y         z
-1 0.5 99.5 1.2031099
-2 1.5 99.5 1.0929368
-3 2.5 99.5 0.5773868
-4 3.5 99.5 0.3958136
-5 4.5 99.5 0.1042752
-6 5.5 99.5 0.0228938
+    x    y            z
+1 0.5 99.5 -0.074299219
+2 1.5 99.5 -0.142481434
+3 2.5 99.5  0.065050945
+4 3.5 99.5 -0.009893408
+5 4.5 99.5  0.570003726
+6 5.5 99.5  0.666561948
 ```
 
 Working with raster data

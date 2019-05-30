@@ -27,6 +27,7 @@ Let's try pulling occurrence records for the Golden-Cheeked Warbler, a threatene
 First we load some packages.
 
 ```{r message=FALSE}
+devtools::install_github("krlmlr/bindrcpp")
 pacman::p_load("tidyverse")
 pacman::p_load("dismo")
 pacman::p_load("tigris")
@@ -47,14 +48,14 @@ if (file.exists("gcwa.rds")) {
 
 Next we need to define our region-of-interest. We will limit our analysis to fall within the borders of Texas. The US Census has shapefiles for all the states, as well as many other geographic features. Spatial census data can be retrieved using the `tigris` package.
 
-```{r}
+```{r message=FALSE, warning=FALSE}
 # Grab the boundary of Texas from the US Census and convert to sf format
 states <- st_as_sf(tigris::states(TRUE))
 texas <- subset(states, NAME == "Texas")
 
 # Transform the boundary and simplify
 texas <- st_transform(texas, 3083) # Azimuthal Equal Area
-texas <- st_simplify(texas, 10000) # simplify to 10km scale
+texas <- st_simplify(texas, TRUE, 10000) # simplify to 10km scale
 ```
 
 Next I convert the observation locations from GBIF into an sf object for manipulation. This will make it a first-class spatial feature with projection metadata. I will also filter the data to avoid missing coordinates. Some GBIF records will not include a spatial location so we need to get rid of those. Here I am using `dplyr` with pipes. We will also subset the point to those that fall within Texas.
@@ -239,17 +240,19 @@ points(st_coordinates(gcwa_bioclim.sf), pch = 19, cex = 0.2, col = "red")
 
 Let's try a support vector machine algorithm. This is a particularly powerful way to classify data.
 
-```{r}
-# pacman::p_load(kernlab)
-# dismod.df$Indic = as.factor(dismod.df$Indic)
-# mod1 = ksvm(Indic ~ ., data = dismod.df)
-# print(mod1)
+**Apparently kernlab is not very memory efficient so these are not run.**
+
+```{r eval=FALSE}
+pacman::p_load(kernlab)
+dismod.df$Indic = as.factor(dismod.df$Indic)
+mod1 = ksvm(Indic ~ ., data = dismod.df)
+print(mod1)
 ```
 
 It would be nice to output probabilities rather than a predicted classification, but at least on my workstation, that used too much memory.
 
-```{r}
-# all_texas = as.data.frame(wcdat)  # big!!!
-# mod1.pred = predict(mod1, all_texas)  # This takes awhile to run
+```{r eval=FALSE}
+all_texas = as.data.frame(wcdat)  # big!!!
+mod1.pred = predict(mod1, all_texas)  # This takes awhile to run
 ```
 

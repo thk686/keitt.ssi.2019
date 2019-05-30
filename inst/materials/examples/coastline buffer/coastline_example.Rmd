@@ -14,11 +14,14 @@ pacman::p_load("tidyverse")
 Download the coastline data using the `tigris` package. This grabs data from the US Census. Here I transform to the [US National Atlas coordinate system](https://epsg.io/2163) and then extract only the Atlantic coast.
 
 ```{r message=FALSE, results='hide'}
-coastline.sf <- coastline() %>% st_as_sf() %>% st_transform(crs = 2163)
-coastline.atlantic <- coastline.sf %>% filter(NAME == "Atlantic")
+coastline.sf <- coastline() %>%
+  st_as_sf() %>%
+  st_transform(crs = 2163)
+coastline.atlantic <- coastline.sf %>%
+  filter(NAME == "Atlantic")
 ```
 
-Plot the coast.
+Plot the coast. I use `st_simplify` to reduce the complexity of the polygons. This greatly speeds up plotting.
 
 ```{r}
 ggplot() +
@@ -28,7 +31,10 @@ ggplot() +
 Now we create a set of polygons that buffer each of the coastline line segments. We have to make the spatial set union of those polygons to make a single buffer (plus an extra for Puerto Rico).
 
 ```{r}
-atlantic.buffer <- coastline.atlantic %>% st_buffer(1e5) %>% st_union() %>% st_sf()  # units are meters
+atlantic.buffer <- coastline.atlantic %>%
+  st_buffer(1e5) %>%
+  st_union() %>%
+  st_sf()  # units are meters
 ```
 
 Plot them together.
@@ -39,11 +45,15 @@ ggplot() +
   geom_sf(data = coastline.atlantic %>% st_simplify(dTolerance = 1e4), color = "darkred")
 ```
 
-Now we grab the national borders and internal divisions.
+Now we grab the national borders and internal divisions. It is key to transform into the same CRS.
 
 ```{r message=FALSE, results='hide'}
-nat <- nation() %>% st_as_sf() %>% st_transform(crs = 2163)
-divs <- divisions() %>% st_as_sf() %>% st_transform(crs = 2163)
+nat <- nation() %>%
+  st_as_sf() %>%
+  st_transform(crs = 2163)
+divs <- divisions() %>%
+  st_as_sf() %>%
+  st_transform(crs = 2163)
 ```
 
 By interesecting the buffer with the boundaries, we clip off the part of the buffer that is over the ocean.

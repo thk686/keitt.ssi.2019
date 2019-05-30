@@ -1,22 +1,31 @@
 ---
 title: "US Census"
-output: html_notebook
+output:
+  html_document:
+    df_print: paged
 ---
 
 ```{r}
-pacman::p_load(tigris)
-pacman::p_load(tidycensus)
+library(tidyverse)
+library(tigris)
+library(tidycensus)
+library(sf)
 ```
 
-```{r results='hide'}
-texas.counties <- counties(48) %>% st_as_sf() %>% st_transform(crs = 3083)
+```{r}
+texas.counties <- counties(48) %>%
+  st_as_sf() %>%
+  st_transform(crs = 3083)
 ```
 
 ```{r}
 ggplot() +
-  geom_sf(data = st_simplify(texas.counties, 1e4))
+  geom_sf(data = st_simplify(texas.counties, TRUE, 1e3))
 ```
 
-```{r}
-county_area_water <- get_decennial("county", "AREAWATR", geometry = TRUE, state = 48)
+** It appears everyone is going to API keys, so this does not work without a registration. **
+
+```{r eval=FALSE}
+county_area_water <- get_decennial("county", "AREAWATR", geometry = TRUE, state = 48,
+                                   key = "71cb5518cad1b2a8f996a1e5c36ee390c1ef7848")
 ```
