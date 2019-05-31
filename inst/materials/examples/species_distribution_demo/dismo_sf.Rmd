@@ -48,7 +48,7 @@ if (file.exists("gcwa.rds")) {
 
 Next we need to define our region-of-interest. We will limit our analysis to fall within the borders of Texas. The US Census has shapefiles for all the states, as well as many other geographic features. Spatial census data can be retrieved using the `tigris` package.
 
-```{r message=FALSE, warning=FALSE}
+```{r results='hide'}
 # Grab the boundary of Texas from the US Census and convert to sf format
 states <- st_as_sf(tigris::states(TRUE))
 texas <- subset(states, NAME == "Texas")
