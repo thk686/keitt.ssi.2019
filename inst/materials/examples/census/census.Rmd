@@ -5,27 +5,47 @@ output:
     df_print: paged
 ---
 
-```{r}
+```{r message=FALSE, warning=FALSE}
 library(tidyverse)
 library(tigris)
-library(tidycensus)
 library(sf)
 ```
 
-```{r}
-texas.counties <- counties(48) %>%
+The `tigris` package defines functions that will download spatial data. It uses the `sp` classes, so we convert to `sf` using `st_as_sf` and then transform to Texas Centric Albers Equal Area projection. We do not use the full resolution data here, which would be obtained if we did not specify the `cb` and `resolution` switches.
+
+```{r results='hide'}
+texas.counties <- counties(48, cb = TRUE, resolution = '5m') %>%
   st_as_sf() %>%
   st_transform(crs = 3083)
 ```
 
+Now we can plot the result.
+
 ```{r}
-ggplot() +
-  geom_sf(data = st_simplify(texas.counties, TRUE, 1e3))
+ggplot(texas.counties) +
+  geom_sf(aes(fill = rank(as.integer(AWATER)))) +
+  scale_fill_gradient(low = "tan", high = "white") +
+  guides(fill = FALSE) +
+  theme_bw()
 ```
 
-** It appears everyone is going to API keys, so this does not work without a registration. **
+Here's an example from the author of the `tigris` package. First we retrieve some party affiliation data (certainly dated) from a website. Then we join that data to the spatial data using `dplyr`'s `inner_join` function.
 
-```{r eval=FALSE}
-census_api_key("71cb5518cad1b2a8f996a1e5c36ee390c1ef7848")
-county_area_water <- get_decennial("county", "AREAWATR", geometry = TRUE, state = 48)
+```{r results='hide'}
+party <- read_csv("http://personal.tcu.edu/kylewalker/data/txlege.csv", col_types = cols())
+districts <- state_legislative_districts("TX", house = "lower", cb = TRUE) %>%
+  st_as_sf() %>%
+  st_transform(crs = 3083) %>%
+  inner_join(y = party, by = c("NAME" = "District")) %>%
+  mutate(Party = as.factor(recode(Party, R = "Republican", D = "Democrat")))
+```
+
+Now we have a spatial coverage where each polygon (lower house districts in Texas) has a party affiliation. Let's make a plot.
+
+```{r}
+ggplot(districts) +
+  geom_sf(aes(color = Party, fill = Party), alpha = 0.5) +
+  scale_fill_manual(values = c("blue", "red")) +
+  scale_color_manual(values = c("darkblue", "darkred")) +
+  theme_bw()
 ```

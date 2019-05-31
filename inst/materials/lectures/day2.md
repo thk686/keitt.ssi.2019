@@ -968,15 +968,6 @@ Basic point processes
 
 ```r
 pacman::p_load(spatstat)
-```
-
-```
-
-The downloaded binary packages are in
-	/var/folders/rd/vbxgtfr542l9w47nmfynknnh0000gn/T//RtmpeRbph3/downloaded_packages
-```
-
-```r
 pacman::p_load(maptools)
 pacman::p_load(rgdal)
 trees = readOGR("example-data/rainforest", "beilschmiedia")
@@ -1331,15 +1322,6 @@ Interpolation and Kriging
 
 ```r
 pacman::p_load(fields)
-```
-
-```
-
-The downloaded binary packages are in
-	/var/folders/rd/vbxgtfr542l9w47nmfynknnh0000gn/T//RtmpeRbph3/downloaded_packages
-```
-
-```r
 oz.tps = Tps(coordinates(ozone), ozone$median)
 show(oz.tps)
 ```

@@ -1,9 +1,8 @@
 ```{r include=F}
-knitr::opts_chunk$set(warning=F, message=F)
+knitr::opts_chunk$set(warning = F, message = F)
 
 # echo activity solutions?
-solutions=FALSE
-
+solutions <- FALSE
 ```
 
 # Geospatial Data Analysis in `R`
@@ -12,21 +11,23 @@ Load some packages.
 
 **Note: You may need to set your working directory to the same as this file.**
 
-```{r results="hide"}
+```{r message=FALSE, warning=FALSE}
 library(sf)
 library(raster)
-library(tidyverse)
+library(dplyr)
+library(ggplot2)
+library(RStoolbox) # provides fortify.raster
 ```
 
-#### The `inner_join` function
+#### The `st_join` function
 
-The `sf` library has an `st_join` function that performs a spatial join. For example, if you have a points dataset and you want to know which polygon in a polygons dataset goes with each point, then you use the `inner_join` command.
+The `sf` library has an `st_join` function that performs a spatial join. For example, if you have a points dataset and you want to know which polygon in a polygons dataset goes with each point, then you use the `st_join` command.
 
 ```{r}
-busstops <- st_read(dsn="ncshape", layer="busstopsall", quiet=T)
-censusblk <- st_read(dsn="ncshape", layer="censusblk_swwake", quiet=T)
-join <- st_join(busstops, censusblk)      # rows of censusblk matched to bus stops
-head(join[, 1:7])  # 'cat' is the bus stop id
+busstops <- st_read(dsn = "ncshape", layer = "busstopsall", quiet = T)
+censusblk <- st_read(dsn = "ncshape", layer = "censusblk_swwake", quiet = T)
+join <- st_join(busstops, censusblk) # rows of censusblk matched to bus stops
+head(join[, 1:7]) # 'cat' is the bus stop id
 ```
 
 #### Activity: Hospital Elevation
@@ -48,28 +49,36 @@ The function `extract` in the raster package will choose pixel values in a raste
 
 ```{r warning=FALSE}
 zipc <- raster("ncrast/zipcodes.tif")
-plot(zipc)
-firest <- st_read(dsn="ncshape", layer="firestations", quiet = TRUE) %>% st_zm() # remove z-values
-plot(firest, pch = 19, add = TRUE)
+firest <- st_read(dsn = "ncshape", layer = "firestations", quiet = TRUE) %>% st_zm() # remove z-values
 fszip <- extract(zipc, st_coordinates(firest)) # raster does not know about sf objects
-res <- data.frame(Firestation = firest$LABEL, Zipcode = fszip)
-res <- res[is.finite(res[, 2]), ]  # Get rid of NA's where firestation was outside of any zipcode
+res <- st_sf(LABEL = firest$LABEL, zipcode = fszip, geometry = firest$geometry) %>%
+  filter(is.finite(zipcode))
 print(res)
+ggplot() +
+  geom_sf(data = res, aes(color = as.factor(zipcode), size = 2), alapha = 0.1) +
+  geom_sf(data = res, aes(size = 0.5)) +
+  geom_raster(data = fortify(zipc), aes(x = x, y = y, fill = as.factor(zipcodes)), alpha = 0.5) +
+  guides(fill = FALSE, color = FALSE, size = FALSE)
 ```
 
 #### Activity: Hospital Elevation
-Use the `hospitals` point layer and the `elev_state_500m` raster to `extract` the elevation of North Carolina hospitals. Open the `hospitals` layer with `pointDropZ=T` to drop Z coordinates.
+Use the `hospitals` point layer and the `elev_state_500m` raster to `extract` the elevation of North Carolina hospitals.
 
-Functions: `raster`, `st_read`, `extract`, `rgb`, `plot`
+Functions: `raster`, `st_read`, `st_zm`, `extract`, `rgb`, `plot`
 
 ```{r echo=solutions, warning=FALSE}
-elev.state <- raster("ncrast/elev_state_500m.tif"); plot(elev.state)
+elev.state <- raster("ncrast/elev_state_500m.tif")
 hospitals <- st_read(dsn = "ncshape", layer = "hospitals", quiet = TRUE) %>% st_zm()
 nc.state <- st_read(dsn = "ncshape", layer = "nc_state", quiet = TRUE) %>% st_zm()
-plot(nc.state, add = TRUE)
-hospitals <- extract(elev.state, hospitals, sp=T)
-pcol = rgb(0.75, 0.5, 1.0, 0.5)
-plot(hospitals, cex = hospitals$elev_state_500m / 500, col = pcol, pch = 19, add = TRUE)
-plot(hospitals, pch = 19, cex = 0.1, add = TRUE)
+hospitals$elevation <- extract(elev.state, st_coordinates(hospitals))
+ggplot(nc.state) +
+  geom_sf() +
+  geom_raster(data = fortify(elev.state), aes(x = x, y = y, fill = elev_state_500m)) +
+  scale_fill_gradientn(colours = terrain.colors(100, alpha = 0.2)) +
+  scale_color_gradientn(colours = terrain.colors(100)) +
+  geom_sf(data = hospitals, aes(color = elevation, size = 2), alpha = 0.5) +
+  geom_sf(data = hospitals, aes(size = 0.5)) +
+  guides(color = FALSE, fill = FALSE, size = FALSE) +
+  theme_bw()
 ```
 
