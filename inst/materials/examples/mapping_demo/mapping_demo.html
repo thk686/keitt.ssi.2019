@@ -544,7 +544,7 @@ world_proj(&quot;gall&quot;, 0)  # zero passed to the coord_map function</code><
 </div>
 <div id="plotting-with-the-ggmap-package" class="section level2">
 <h2>Plotting with the ggmap package</h2>
-<p><em>Unfortunately, Google has seen fit to require a private API key tied to a credit card number, so I cannot use ggmap for tutorials anymore</em></p>
+<p><strong>Unfortunately, Google has seen fit to require a private API key tied to a credit card number, so I cannot use ggmap for tutorials anymore.</strong></p>
 <p>The <code>ggmap</code> package can produce remarkably nice maps. It does this by pulling map data from service like Google Maps, which you can then render locally. What is really nice is that <code>ggmap</code> can exploit Google’s geocoding service to look up place-names.</p>
 <pre class="r"><code>utmap = get_map(&quot;University of Texas at Austin&quot;)
 tryCatch(ggmap(utmap), error = function(...)
