@@ -28,3 +28,9 @@ If you need to install the devtools package, then
 ``` r
 install.packages("devtools")
 ```
+
+If you find any of these materials useful, please cite them. Details can
+be foud by clicking on the badge below. Thank
+you.
+
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.3247152.svg)](https://doi.org/10.5281/zenodo.3247152)
